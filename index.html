@@ -62,6 +62,12 @@
             background: rgba(30, 41, 59, 0.8);
             box-shadow: 0 0 20px rgba(56, 189, 248, 0.3), 0 0 40px rgba(56, 189, 248, 0.2);
         }
+        .topic-card h3 {
+            transition: transform 0.3s ease-in-out;
+        }
+        .topic-card:hover h3 {
+            transform: scale(1.4);
+        }
         .animate-on-scroll {
             opacity: 0;
             will-change: transform, opacity;
@@ -84,9 +90,26 @@
             transform: scale(1);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             background: linear-gradient(to right, #0ea5e9, #6366f1);
+            display: inline-block;
         }
         .btn:hover {
             transform: scale(1.05);
+        }
+        .btn-secondary {
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            color: #cbd5e1; /* slate-300 */
+            border: 2px solid #38bdf8; /* sky-400 */
+            transition: all 0.3s;
+            transform: scale(1);
+            display: inline-block;
+        }
+        .btn-secondary:hover {
+            transform: scale(1.05);
+            background-color: #38bdf8;
+            color: white;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
         }
     </style>
 </head>
@@ -99,13 +122,12 @@
         <div class="hero-content">
             <h1 class="text-4xl md:text-6xl lg:text-7xl mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-indigo-400">化学の世界へ、ようこそ。</h1>
             <p class="text-lg md:text-2xl text-slate-300 mb-10 max-w-3xl mx-auto">原子、分子から化学反応まで。インタラクティブな学びで、化学の「なぜ？」を「なるほど！」に変えよう。</p>
-            <a href="#topics" class="btn text-lg">学習を始める</a>
         </div>
     </div>
 
     <!-- 単元一覧セクション -->
     <div id="topics" class="topics-section">
-        <div class="max-w-7xl mx-auto">
+        <div class="max-w-7xl mx-auto pb-96">
             <div class="text-center mb-20 animate-on-scroll slide-from-left">
                 <h2 class="text-3xl md:text-5xl font-bold">学習単元一覧</h2>
                 <p class="text-slate-400 mt-4 text-lg">興味のある単元から始めよう！</p>
@@ -116,21 +138,21 @@
                 <!-- Group 1: 原子・分子・物質 -->
                 <div class="md:col-span-4 animate-on-scroll slide-from-left-diag">
                     <a href="#" class="topic-card">
-                        <h3 class="text-2xl font-bold text-sky-300 mb-3">原子について</h3>
+                        <h3 class="text-2xl font-bold text-sky-300 mb-3 text-center">原子について</h3>
                         <p class="text-slate-400">すべての物質の基本となる小さな粒。その構造や、周期表の秘密に迫ります。</p>
                     </a>
                 </div>
 
                 <div class="md:col-start-9 md:col-span-4 animate-on-scroll slide-from-right-diag">
                     <a href="#" class="topic-card">
-                        <h3 class="text-2xl font-bold text-teal-300 mb-3">分子について</h3>
+                        <h3 class="text-2xl font-bold text-teal-300 mb-3 text-center">分子について</h3>
                         <p class="text-slate-400">原子たちが結びついて生まれる分子。共有結合や分子の形、極性などを学びます。</p>
                     </a>
                 </div>
 
                 <div class="md:col-start-5 md:col-span-4 mt-0 md:-mt-24 animate-on-scroll slide-from-left">
                     <a href="#" class="topic-card">
-                        <h3 class="text-2xl font-bold text-emerald-300 mb-3">物質の三態</h3>
+                        <h3 class="text-2xl font-bold text-emerald-300 mb-3 text-center">物質の三態</h3>
                         <p class="text-slate-400">固体・液体・気体。物質が見せる３つの姿と、その間の状態変化について探求します。</p>
                     </a>
                 </div>
@@ -138,29 +160,29 @@
                 <!-- Group 2: mol・化学反応 -->
                 <div class="md:col-start-2 md:col-span-5 mt-16 animate-on-scroll slide-from-right">
                     <a href="mol.html" class="topic-card">
-                        <h3 class="text-2xl font-bold text-amber-300 mb-3">molについて</h3>
+                        <h3 class="text-2xl font-bold text-amber-300 mb-3 text-center">molについて</h3>
                         <p class="text-slate-400">化学計算の心臓部！目に見えない粒子の数を扱うための魔法の単位「モル」をマスターします。</p>
                     </a>
                 </div>
 
                 <div class="md:col-start-7 md:col-span-5 mt-16 animate-on-scroll slide-from-left">
                     <a href="#" class="topic-card">
-                        <h3 class="text-2xl font-bold text-orange-300 mb-3">化学反応式</h3>
+                        <h3 class="text-2xl font-bold text-orange-300 mb-3 text-center">化学反応式</h3>
                         <p class="text-slate-400">化学変化を記述するための言語。式の立て方から量的な関係まで、徹底解説します。</p>
                     </a>
                 </div>
 
                 <!-- Group 3: 酸と塩基・酸化還元 -->
                 <div class="md:col-start-3 md:col-span-4 mt-16 animate-on-scroll slide-from-right-diag">
-                     <a href="#" class="topic-card">
-                        <h3 class="text-2xl font-bold text-rose-300 mb-3">酸と塩基</h3>
+                       <a href="#" class="topic-card">
+                        <h3 class="text-2xl font-bold text-rose-300 mb-3 text-center">酸と塩基</h3>
                         <p class="text-slate-400">身の回りにあふれる酸性・アルカリ性。中和反応やpHの概念を学び、その性質を解き明かします。</p>
                     </a>
                 </div>
                 
                 <div class="md:col-start-7 md:col-span-4 mt-16 animate-on-scroll slide-from-left-diag">
                     <a href="#" class="topic-card">
-                        <h3 class="text-2xl font-bold text-purple-300 mb-3">酸化還元</h3>
+                        <h3 class="text-2xl font-bold text-purple-300 mb-3 text-center">酸化還元</h3>
                         <p class="text-slate-400">電子のやり取りで起こる化学反応。電池の仕組みから金属のイオン化傾向までを学びます。</p>
                     </a>
                 </div>
@@ -279,17 +301,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewportHeight = window.innerHeight;
         animatedElements.forEach(el => {
             const rect = el.getBoundingClientRect();
-            // アニメーションの開始と終了のタイミングを調整
-            const triggerPointStart = viewportHeight * 1.1; 
-            const triggerPointEnd = viewportHeight * 0.1;
+
+            // アニメーションの各フェーズの境界となる位置を定義
+            const wipeInStartPos = viewportHeight; // フェードイン開始位置（要素の上端が画面下部に到達した時）
+            const fullVisibilityStartPos = viewportHeight * 0.85; // 完全に表示される位置（要素の上端が画面の85%を通過した時）
+            const wipeOutStartPos = viewportHeight * 0.2; // フェードアウト開始位置（要素の上端が画面の20%を通過した時）
+            const wipeOutEndPos = -rect.height; // フェードアウト完了位置（要素の下端が画面上部を通過した時）
+
+            let progress = 0;
+
+            if (rect.top <= fullVisibilityStartPos && rect.top > wipeOutStartPos) {
+                // フェーズ2: 要素が完全に表示されている状態
+                progress = 1;
+            } else if (rect.top > fullVisibilityStartPos && rect.top <= wipeInStartPos) {
+                // フェーズ1: 画面下部からワイプイン
+                progress = (wipeInStartPos - rect.top) / (wipeInStartPos - fullVisibilityStartPos);
+            } else if (rect.top <= wipeOutStartPos && rect.top > wipeOutEndPos) {
+                // フェーズ3: 画面上部へワイプアウト
+                progress = (rect.top - wipeOutEndPos) / (wipeOutStartPos - wipeOutEndPos);
+            }
             
-            let progress = (triggerPointStart - rect.top) / (triggerPointStart - triggerPointEnd);
+            // progressの値を0から1の間に収める
             progress = Math.max(0, Math.min(1, progress));
 
             el.style.opacity = progress;
 
-            // イージング関数を調整して重厚感を出す (EaseOutQuint)
-            const easedProgress = 1 - Math.pow(1 - progress, 5); 
+            // イージング関数を適用して、アニメーションに滑らかさを加える
+            const easedProgress = 1 - Math.pow(1 - progress, 3); // EaseOutCubic
             const reverseProgress = 1 - easedProgress;
             const scale = 0.8 + (0.2 * easedProgress);
 
@@ -333,4 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
+
+
 
