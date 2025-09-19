@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【高校化学基礎】インタラクティブ学習サイト</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'M PLUS Rounded 1c', sans-serif;
+            background-color: #0f172a; /* slate-900 */
+            color: #f1f5f9; /* slate-100 */
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+        .hero-section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            background: radial-gradient(ellipse at bottom, #1e293b 0%, #0f172a 100%);
+        }
+        .hero-content {
+            will-change: transform, opacity;
+            transition: transform 0.1s linear, opacity 0.1s linear;
+        }
+        .topics-section {
+            padding: 8rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        .topic-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            color: inherit;
+            text-decoration: none;
+            display: block;
+            height: 100%;
+        }
+        .topic-card:hover {
+            border-color: rgba(56, 189, 248, 0.7);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3), 0 0 40px rgba(56, 189, 248, 0.2);
+        }
+        .animate-on-scroll {
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        .slide-from-left { transform: translateX(-200px) rotate(-20deg) scale(0.8); }
+        .slide-from-right { transform: translateX(200px) rotate(20deg) scale(0.8); }
+        .slide-from-left-diag { transform: translate(-150px, 150px) rotate(-20deg) scale(0.8); }
+        .slide-from-right-diag { transform: translate(150px, -150px) rotate(20deg) scale(0.8); }
+
+        h1, h2 {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            font-weight: 800;
+        }
+        .btn {
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            color: white;
+            transition: all 0.3s;
+            transform: scale(1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            background: linear-gradient(to right, #0ea5e9, #6366f1);
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="background-canvas"></canvas>
+
+    <!-- ヒーローセクション -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="text-4xl md:text-6xl lg:text-7xl mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-indigo-400">化学の世界へ、ようこそ。</h1>
+            <p class="text-lg md:text-2xl text-slate-300 mb-10 max-w-3xl mx-auto">原子、分子から化学反応まで。インタラクティブな学びで、化学の「なぜ？」を「なるほど！」に変えよう。</p>
+            <a href="#topics" class="btn text-lg">学習を始める</a>
+        </div>
+    </div>
+
+    <!-- 単元一覧セクション -->
+    <div id="topics" class="topics-section">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-20 animate-on-scroll slide-from-left">
+                <h2 class="text-3xl md:text-5xl font-bold">学習単元一覧</h2>
+                <p class="text-slate-400 mt-4 text-lg">興味のある単元から始めよう！</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                
+                <!-- Group 1: 原子・分子・物質 -->
+                <div class="md:col-span-4 animate-on-scroll slide-from-left-diag">
+                    <a href="#" class="topic-card">
+                        <h3 class="text-2xl font-bold text-sky-300 mb-3">原子について</h3>
+                        <p class="text-slate-400">すべての物質の基本となる小さな粒。その構造や、周期表の秘密に迫ります。</p>
+                    </a>
+                </div>
+
+                <div class="md:col-start-9 md:col-span-4 animate-on-scroll slide-from-right-diag">
+                    <a href="#" class="topic-card">
+                        <h3 class="text-2xl font-bold text-teal-300 mb-3">分子について</h3>
+                        <p class="text-slate-400">原子たちが結びついて生まれる分子。共有結合や分子の形、極性などを学びます。</p>
+                    </a>
+                </div>
+
+                <div class="md:col-start-5 md:col-span-4 mt-0 md:-mt-24 animate-on-scroll slide-from-left">
+                    <a href="#" class="topic-card">
+                        <h3 class="text-2xl font-bold text-emerald-300 mb-3">物質の三態</h3>
+                        <p class="text-slate-400">固体・液体・気体。物質が見せる３つの姿と、その間の状態変化について探求します。</p>
+                    </a>
+                </div>
+
+                <!-- Group 2: mol・化学反応 -->
+                <div class="md:col-start-2 md:col-span-5 mt-16 animate-on-scroll slide-from-right">
+                    <a href="mol.html" class="topic-card">
+                        <h3 class="text-2xl font-bold text-amber-300 mb-3">molについて</h3>
+                        <p class="text-slate-400">化学計算の心臓部！目に見えない粒子の数を扱うための魔法の単位「モル」をマスターします。</p>
+                    </a>
+                </div>
+
+                <div class="md:col-start-7 md:col-span-5 mt-16 animate-on-scroll slide-from-left">
+                    <a href="#" class="topic-card">
+                        <h3 class="text-2xl font-bold text-orange-300 mb-3">化学反応式</h3>
+                        <p class="text-slate-400">化学変化を記述するための言語。式の立て方から量的な関係まで、徹底解説します。</p>
+                    </a>
+                </div>
+
+                <!-- Group 3: 酸と塩基・酸化還元 -->
+                <div class="md:col-start-3 md:col-span-4 mt-16 animate-on-scroll slide-from-right-diag">
+                     <a href="#" class="topic-card">
+                        <h3 class="text-2xl font-bold text-rose-300 mb-3">酸と塩基</h3>
+                        <p class="text-slate-400">身の回りにあふれる酸性・アルカリ性。中和反応やpHの概念を学び、その性質を解き明かします。</p>
+                    </a>
+                </div>
+                
+                <div class="md:col-start-7 md:col-span-4 mt-16 animate-on-scroll slide-from-left-diag">
+                    <a href="#" class="topic-card">
+                        <h3 class="text-2xl font-bold text-purple-300 mb-3">酸化還元</h3>
+                        <p class="text-slate-400">電子のやり取りで起こる化学反応。電池の仕組みから金属のイオン化傾向までを学びます。</p>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    /**
+     * 背景アニメーション
+     */
+    const canvas = document.getElementById('background-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouse = { x: null, y: null };
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.vx = (Math.random() - 0.5) * 0.3;
+            this.vy = (Math.random() - 0.5) * 0.3;
+            this.radius = Math.random() * 1.5 + 1;
+            this.color = `rgba(100, 116, 139, ${Math.random() * 0.5 + 0.2})`;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+        }
+    }
+
+    function createParticles() {
+        const particleCount = Math.floor(canvas.width * canvas.height / 12000);
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        createParticles();
+    }
+    
+    function connectParticles() {
+        const maxDist = 120;
+        const mouseMaxDist = 200;
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dist = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+                if (dist < maxDist) {
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `rgba(100, 116, 139, ${1 - dist / maxDist})`;
+                    ctx.lineWidth = 0.3;
+                    ctx.stroke();
+                }
+            }
+            if (mouse.x && mouse.y) {
+                 const mouseDist = Math.hypot(particles[i].x - mouse.x, particles[i].y - mouse.y);
+                 if (mouseDist < mouseMaxDist) {
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(mouse.x, mouse.y);
+                    ctx.strokeStyle = `rgba(148, 163, 184, ${0.5 * (1 - mouseDist / mouseMaxDist)})`;
+                    ctx.lineWidth = 0.4;
+                    ctx.stroke();
+                 }
+            }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        connectParticles();
+        requestAnimationFrame(animate);
+    }
+    
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    window.addEventListener('mousemove', (event) => { mouse.x = event.x; mouse.y = event.y; });
+    window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
+    animate();
+    
+    /**
+     * ヒーローセクションのパララックス
+     */
+    const heroContent = document.querySelector('.hero-content');
+    window.addEventListener('scroll', () => {
+        const scrollY = window.scrollY;
+        if (scrollY < window.innerHeight) {
+            heroContent.style.transform = `translateY(${scrollY * 0.4}px)`;
+            heroContent.style.opacity = `${1 - scrollY / (window.innerHeight / 1.5)}`;
+        }
+    });
+
+    /**
+     * スクロール連動型アニメーション
+     */
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+    function handleScrollAnimation() {
+        const viewportHeight = window.innerHeight;
+        animatedElements.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            // アニメーションの開始と終了のタイミングを調整
+            const triggerPointStart = viewportHeight * 1.1; 
+            const triggerPointEnd = viewportHeight * 0.1;
+            
+            let progress = (triggerPointStart - rect.top) / (triggerPointStart - triggerPointEnd);
+            progress = Math.max(0, Math.min(1, progress));
+
+            el.style.opacity = progress;
+
+            // イージング関数を調整して重厚感を出す (EaseOutQuint)
+            const easedProgress = 1 - Math.pow(1 - progress, 5); 
+            const reverseProgress = 1 - easedProgress;
+            const scale = 0.8 + (0.2 * easedProgress);
+
+            if (el.classList.contains('slide-from-left')) {
+                el.style.transform = `translateX(${-200 * reverseProgress}px) rotate(${-20 * reverseProgress}deg) scale(${scale})`;
+            } else if (el.classList.contains('slide-from-right')) {
+                el.style.transform = `translateX(${200 * reverseProgress}px) rotate(${20 * reverseProgress}deg) scale(${scale})`;
+            } else if (el.classList.contains('slide-from-left-diag')) {
+                el.style.transform = `translate(${-150 * reverseProgress}px, ${150 * reverseProgress}px) rotate(${-20 * reverseProgress}deg) scale(${scale})`;
+            } else if (el.classList.contains('slide-from-right-diag')) {
+                el.style.transform = `translate(${150 * reverseProgress}px, ${-150 * reverseProgress}px) rotate(${20 * reverseProgress}deg) scale(${scale})`;
+            }
+        });
+    }
+
+    window.addEventListener('scroll', handleScrollAnimation, { passive: true });
+    handleScrollAnimation();
+
+    /**
+     * カードの3Dチルトエフェクト
+     */
+    const cards = document.querySelectorAll('.topic-card');
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const { width, height } = rect;
+            const rotateX = (y / height - 0.5) * -40;
+            const rotateY = (x / width - 0.5) * 40;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.15, 1.15, 1.15)`;
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+        });
+    });
+
+});
+</script>
+
+</body>
+</html>
+

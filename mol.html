@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>モルを制する者は化学を制す</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'M PLUS Rounded 1c', sans-serif;
+            background-color: #f0f4f8;
+            color: #334155;
+            scroll-behavior: smooth;
+        }
+        .section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 2rem;
+            scroll-snap-align: start;
+        }
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            max-width: 960px;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        h1, h2, h3 {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+        }
+        .highlight {
+            background: linear-gradient(transparent 65%, #fde047 65%);
+            font-weight: 700;
+        }
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            color: white;
+            transition: all 0.3s;
+            transform: scale(1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .btn-primary {
+            background: linear-gradient(to right, #0ea5e9, #6366f1);
+            font-size: 1.125rem;
+            padding: 0.75rem 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .atom-source {
+            width: 50px; height: 50px; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; font-weight: bold;
+            color: white; cursor: grab; user-select: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: transform 0.2s;
+        }
+        .atom-source.dragging {
+            opacity: 0.5;
+            transform: scale(1.2);
+        }
+        .balance-beam {
+            width: 100%; height: 10px; background-color: #94a3b8;
+            position: relative; transition: transform 0.5s ease-in-out; border-radius: 5px;
+        }
+        .balance-pan {
+            width: 120px; height: 80px; border: 5px solid #94a3b8; border-top: none;
+            border-radius: 0 0 20px 20px; position: absolute; bottom: -80px;
+            display: flex; justify-content: center; align-items: center;
+            flex-wrap: wrap; padding: 5px; background-color: #f8fafc;
+            transition: all 0.3s;
+        }
+        .balance-pan.drop-active {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .switch-container {
+            display: flex; background-color: #e2e8f0; border-radius: 9999px;
+            padding: 4px; width: fit-content;
+        }
+        .switch-btn {
+            padding: 8px 16px; border-radius: 9999px; cursor: pointer;
+            font-weight: 600; transition: background-color 0.3s, color 0.3s;
+        }
+        .switch-btn.active {
+            background-color: #3b82f6; color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .calc-formula {
+            text-align: center;
+            font-size: 0.875rem;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+            color: #64748b;
+            margin: 0.25rem 0;
+            height: 1.25rem;
+        }
+        .calc-box-disabled {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <!-- ヒーローセクション -->
+    <div id="hero" class="section bg-gradient-to-b from-slate-900 to-slate-800 text-white text-center">
+        <div class="fade-in">
+            <h1 class="text-4xl md:text-6xl mb-4">モルを制する者は<br>化学を制す</h1>
+            <p class="text-lg md:text-2xl text-slate-300 mb-8">化学計算の最重要概念「mol」。<br>その本質を理解すれば、化学の世界はもっと面白くなる。</p>
+            <a href="#problem" class="btn btn-primary">さあ、始めよう</a>
+        </div>
+    </div>
+
+    <!-- 第1章：なぜmolが必要なのか？ -->
+    <div id="problem" class="section bg-slate-100">
+        <div class="card fade-in">
+            <h2 class="text-3xl md:text-4xl text-center mb-6 text-red-500">第1章：原子の世界の「2つの問題」</h2>
+            <p class="text-center text-lg mb-8">化学反応は原子や分子の「個数」で起こります。例えば「水素原子2個と酸素原子1個が結びついて水分子1個ができる」というように。しかし、実際に原子の個数を数えて実験することは、2つの大きな壁があるため不可能です。</p>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="text-center p-6 bg-red-50 rounded-xl border border-red-200">
+                    <h3 class="text-2xl mb-4 font-bold">① 質量が「軽すぎる」問題</h3>
+                    <div class="flex justify-center items-center h-16 my-2 text-red-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3v18"/>
+                            <path d="M3 9l9-7 9 7"/>
+                            <path d="M12 21l-9-7h18l-9 7z"/>
+                            <circle cx="7" cy="13" r="1" fill="currentColor"/>
+                            <path d="M16 17a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3z"/>
+                        </svg>
+                    </div>
+                    <p class="mb-4">炭素原子1個の本当の質量（絶対質量）は...<br><span class="text-sm font-mono break-all">0.0000000000000000000000199 g</span><br>これを指数で表すと <span class="font-bold">1.99×10⁻²³ g</span> です。こんな小さな数字を毎回使って計算するのは、あまりにも複雑で現実的ではありません。</p>
+                </div>
+                <div class="text-center p-6 bg-blue-50 rounded-xl border border-blue-200">
+                    <h3 class="text-2xl mb-4 font-bold">② 個数が「多すぎる」問題</h3>
+                    <div class="flex justify-center items-center h-16 my-2 text-blue-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="19" r="1.5" /><circle cx="5" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /><circle cx="16.95" cy="16.95" r="1.5" /><circle cx="7.05" cy="7.05" r="1.5" /><circle cx="16.95" cy="7.05" r="1.5" /><circle cx="7.05" cy="16.95" r="1.5" />
+                        </svg>
+                    </div>
+                    <p class="mb-4">わずかスプーン1杯(12g)の炭素に含まれる原子の数は...<br><span class="text-sm font-mono break-all">602,000,000,000,000,000,000,000 個</span><br>これは <span class="font-bold">6.02×10²³ 個</span>。天文学的な数であり、とても数えきれません。</p>
+                </div>
+            </div>
+            <p class="text-center text-xl mt-10 font-bold text-slate-700">この「不便さ」を解消するため、科学者たちは画期的なアイデアを生み出しました。それが、<span class="highlight text-2xl">mol</span>につながる物語の始まりです。</p>
+        </div>
+    </div>
+
+    <!-- 第2章：相対質量 -->
+    <div id="relative-mass" class="section bg-green-50">
+        <div class="card fade-in">
+            <h2 class="text-3xl md:text-4xl text-center mb-6 text-green-600">第2章：「軽すぎる」を解決！ - 相対質量</h2>
+            <p class="text-lg mb-4">絶対質量が不便なら、直接使うのをやめましょう。代わりに<span class="font-bold">「基準となる原子と比べて、何倍重いか？」</span>で考えれば、もっとシンプルな数字で原子の重さを表せます。これが「相対質量」の核心です。</p>
+            <p class="mb-6">その重要な「基準」として、科学者たちは<span class="highlight">質量数12の炭素原子 (¹²C)</span> を選びました。炭素は安定して存在し、様々な化合物の骨格となる重要な元素だからです。そして、この¹²C原子の質量をピッタリ<span class="font-bold text-2xl">「12」</span>と定義しました。この基準を元に、他の原子の質量を相対的に表したものが<span class="font-bold text-green-700">「相対質量」</span>です。</p>
+            
+            <h3 class="text-2xl text-center font-bold mb-4">⚖️ 天秤で相対質量を体感しよう</h3>
+            <p class="text-center mb-4">左皿の¹²C原子1個と釣り合うように、右のお皿に他の原子をドラッグ＆ドロップしてみよう！</p>
+            
+            <div class="relative h-48 w-full max-w-lg mx-auto mb-12">
+                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-16 bg-slate-500 rounded-t-lg"></div><div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-500 rounded-md"></div>
+                <div id="balanceBeam" class="balance-beam absolute top-1/2 left-0">
+                    <div id="panLeft" class="balance-pan left-4 md:left-10"></div><div id="panRight" class="balance-pan right-4 md:right-10"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-center items-center gap-4 flex-wrap" id="atomPalette">
+                <div class="atom-source bg-sky-400" draggable="true" data-mass="1" data-color="bg-sky-400" data-text="¹H">¹H</div>
+                <div class="atom-source bg-purple-500" draggable="true" data-mass="4" data-color="bg-purple-500" data-text="⁴He">⁴He</div>
+                <div class="atom-source bg-gray-600" draggable="true" data-mass="12" data-color="bg-gray-600" data-text="¹²C">¹²C</div>
+                <div class="atom-source bg-orange-500" draggable="true" data-mass="24" data-color="bg-orange-500" data-text="²⁴Mg">²⁴Mg</div>
+            </div>
+             <p id="balanceResult" class="text-center text-xl font-bold mt-4 h-8"></p>
+             <div class="text-center mt-4">
+                 <button id="resetBalanceBtn" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-full hover:bg-slate-300 transition shadow">リセット</button>
+             </div>
+        </div>
+    </div>
+
+    <!-- 第3章：原子量 -->
+    <div id="atomic-weight" class="section bg-teal-50">
+        <div class="card fade-in">
+            <h2 class="text-3xl md:text-4xl text-center mb-6 text-teal-600">第3章：自然界の真実 - 原子量</h2>
+            <p class="text-lg mb-6">相対質量で一件落着…と思いきや、自然界はもう少し複雑です。同じ元素でも中性子の数が違う原子、<span class="font-bold">同位体（アイソトープ）</span>が存在します。</p>
+            <canvas id="isotopeCanvas" class="w-full bg-slate-200 rounded-lg border aspect-video"></canvas>
+            <div id="isotopeInfo" class="text-center font-bold text-lg mt-2 h-8"></div>
+            <div class="flex justify-center gap-4 mt-2">
+                <button id="isotopeStopBtn" class="btn bg-gradient-to-r from-cyan-500 to-blue-500 shadow-lg">ストップ</button>
+                <button id="isotopeAlignBtn" class="btn bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg">整列</button>
+            </div>
+            <div class="p-6 bg-white rounded-lg border border-teal-200 mt-6">
+                <p class="text-center text-lg">自然界の塩素(Cl)は、<span class="font-bold text-blue-500">軽い³⁵Cl (75%)</span> と <span class="font-bold text-red-600">重い³⁷Cl (25%)</span> が混ざって存在します。実験で使う塩素は常にこの混合物なので、計算には<span class="highlight">存在比を考慮した平均値</span>を使うのが合理的です。この平均値が<span class="text-teal-700 text-2xl">「原子量」</span>です。</p>
+                 <div class="text-center mt-4">
+                     <p class="text-lg font-bold">塩素の原子量の計算</p>
+                     <div class="flex items-center justify-center font-mono text-lg text-slate-800">
+                         <span>35.0 × </span>
+                         <div class="inline-flex flex-col text-center mx-2 leading-tight">
+                             <span class="px-2 border-b-2 border-slate-700">75</span>
+                             <span class="px-2">100</span>
+                         </div>
+                         <span class="mx-2"> + 37.0 × </span>
+                         <div class="inline-flex flex-col text-center mx-2 leading-tight">
+                             <span class="px-2 border-b-2 border-slate-700">25</span>
+                             <span class="px-2">100</span>
+                         </div>
+                         <span class="ml-2"> = 35.5</span>
+                     </div>
+                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第4章：分子量・式量 -->
+    <div id="molecular-weight" class="section bg-indigo-50">
+        <div class="card fade-in">
+            <h2 class="text-3xl md:text-4xl text-center mb-6 text-indigo-600">第4章：分子の世界へ - 分子量・式量</h2>
+            <p class="text-lg mb-6">原子が集まると「分子」ができます。では、分子全体の重さはどう考えれば良いでしょうか？答えはシンプルで、<span class="highlight">分子を構成するすべての原子の「原子量」を足し合わせる</span>だけです。これが<span class="font-bold text-indigo-700">「分子量」</span>です。</p>
+            
+            <h3 class="text-2xl text-center font-bold mb-4">💧 水分子 (H₂O) の分子量を計算してみよう</h3>
+            <div class="bg-white p-6 rounded-2xl border border-indigo-200 shadow-inner flex flex-col md:flex-row items-center justify-center gap-4 text-center">
+                <!-- H atom * 2 -->
+                <div class="flex flex-col items-center">
+                    <div class="flex gap-2">
+                        <div class="w-16 h-16 rounded-full bg-sky-400 flex items-center justify-center text-white font-bold text-xl shadow-md">H</div>
+                        <div class="w-16 h-16 rounded-full bg-sky-400 flex items-center justify-center text-white font-bold text-xl shadow-md">H</div>
+                    </div>
+                    <p class="font-mono mt-2">1.0 × 2</p>
+                </div>
+                
+                <div class="text-4xl font-bold text-slate-400 mx-4">+</div>
+                
+                <!-- O atom * 1 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-xl shadow-md">O</div>
+                    <p class="font-mono mt-2">16.0 × 1</p>
+                </div>
+                
+                <div class="text-4xl font-bold text-slate-400 mx-4">=</div>
+    
+                <!-- Result -->
+                <div class="flex flex-col items-center">
+                     <svg class="w-24 h-24" viewBox="0 0 100 100">
+                        <circle cx="50" cy="35" r="25" fill="#ef4444"/>
+                        <text x="50" y="41" font-size="20" fill="white" text-anchor="middle" font-weight="bold">O</text>
+                        <circle cx="25" cy="70" r="15" fill="#3b82f6"/>
+                        <text x="25" y="75" font-size="15" fill="white" text-anchor="middle" font-weight="bold">H</text>
+                        <circle cx="75" cy="70" r="15" fill="#3b82f6"/>
+                        <text x="75" y="75" font-size="15" fill="white" text-anchor="middle" font-weight="bold">H</text>
+                    </svg>
+                    <p class="font-mono font-bold text-2xl text-indigo-600 -mt-2">18.0</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 p-4 bg-slate-100 rounded-lg">
+                 <h3 class="font-bold text-xl text-slate-700">補足：イオン結晶などは「式量」</h3>
+                 <p class="mt-2">塩化ナトリウム(NaCl)のように、分子を作らずにイオンが規則正しく並んでいる物質もあります。この場合、分子量とは言わず、組成式に含まれる原子の原子量を合計した値を<span class="font-bold">「式量」</span>と呼びます。考え方は分子量と全く同じです！ (例: NaClの式量 = 23.0 + 35.5 = 58.5)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第5章：molの誕生 -->
+    <div id="mole-birth" class="section bg-yellow-50">
+        <div class="card fade-in">
+            <h2 class="text-3xl md:text-4xl text-center mb-6 text-amber-600">第5章：ミクロとマクロを繋ぐ橋 - mol</h2>
+            <p class="text-lg mb-6">原子量や分子量がわかり、原子や分子の世界の"重さの比"が手に入りました。しかし、これだけでは「多すぎる」問題は解決しません。どうすれば、目に見えない粒子の個数と、私たちが実験室で測れるグラム(g)の世界を繋げられるでしょうか？</p>
+            <p class="text-center text-2xl font-bold my-8">ここで、歴史的な発想の大転換が起こります。</p>
+            <div class="text-center bg-white p-6 rounded-2xl shadow-inner">
+                <p class="text-xl">「原子量が12の炭素を、<span class="font-bold text-red-500 text-2xl">12g</span>集めてみよう。<br>そして、その中に含まれる原子の<span class="highlight">個数</span>を、新しい『かたまり』の単位としよう！」</p>
+                <div class="w-full max-w-md mx-auto my-6">
+                    <svg viewBox="0 0 300 170">
+                        <defs>
+                            <marker id="arrowhead-out-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0ea5e9" /></marker>
+                            <marker id="arrowhead-out-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b" /></marker>
+                        </defs>
+                        <!-- Left: Micro world -->
+                        <g>
+                            <circle cx="50" cy="85" r="15" fill="#475569"/>
+                            <text x="50" y="90" font-size="12" fill="white" text-anchor="middle">¹²C</text>
+                            <text x="50" y="120" font-size="10" fill="#334155" text-anchor="middle">原子1個の世界</text>
+                            <text x="50" y="133" font-size="9" fill="#334155" text-anchor="middle">(原子量 12)</text>
+                        </g>
+                        <!-- Right: Macro world -->
+                        <g>
+                            <path d="M220,100 C200,75 260,75 240,100" stroke="#475569" stroke-width="1" fill="#64748b" />
+                            <rect x="200" y="100" width="80" height="10" fill="#475569" rx="2"/>
+                            <text x="240" y="120" font-size="10" fill="#334155" text-anchor="middle">現実の世界</text>
+                            <text x="240" y="133" font-size="9" fill="#334155" text-anchor="middle" font-weight="bold">(質量 12g)</text>
+                        </g>
+                        <!-- Arrow 1 -->
+                        <path d="M80,85 C110,50 190,50 220,85" stroke="#0ea5e9" stroke-width="2.5" fill="none" marker-end="url(#arrowhead-out-blue)"/>
+                        <text x="150" y="45" font-size="8" text-anchor="middle" fill="#0ea5e9">「原子量」と同じ数値の「グラム」を集めると...</text>
+                        <!-- Arrow 2 -->
+                        <path d="M220,90 C190,130 110,130 80,90" stroke="#f59e0b" stroke-width="2.5" fill="none" marker-start="url(#arrowhead-out-orange)"/>
+                        <text x="150" y="140" font-size="8" text-anchor="middle" fill="#f59e0b">...その個数は常に <tspan font-weight="bold">6.02×10²³個</tspan> になる！</text>
+                        <text x="150" y="158" font-size="14" text-anchor="middle" fill="#ef4444" font-weight="bold">これを「1 mol」と呼ぼう！</text>
+                    </svg>
+                </div>
+                <p class="text-xl">実際にその個数を調べてみると...</p>
+                <div class="p-4 bg-amber-100 rounded-lg mt-2">
+                    <p class="text-lg md:text-xl font-mono font-bold text-amber-800 break-all">602,000,000,000,000,000,000,000 個</p>
+                    <p class="text-sm">指数で表すと 6.02 × 10²³ 個 (アボガドロ定数)</p>
+                </div>
+                 <p class="text-center text-slate-600 mt-6 italic">実際の計算では、簡略化して「<span class="font-bold">6.0 × 10²³</span>」を使うことも多いよ！</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第6章：mol計算マスター -->
+    <div id="mole-master" class="section bg-sky-50">
+        <div class="card fade-in">
+            <h2 class="text-3xl md:text-4xl text-center mb-8 text-sky-600">第6章：mol計算をマスターする</h2>
+            <p class="text-center text-lg mb-6">molは、物質の世界の中心に位置するハブ空港のようなもの。molを経由すれば、「質量(g)」「気体の体積(L)」「粒子の数(個)」を自由に行き来できます。</p>
+            
+            <div class="w-full max-w-lg mx-auto my-8">
+                <svg viewBox="0 0 200 160">
+                    <defs>
+                        <marker id="arrowhead-out-green" viewBox="0 0 5 3.5" refX="0" refY="1.75" markerWidth="5" markerHeight="3.5" orient="auto"><polygon points="0 0, 5 1.75, 0 3.5" fill="#16a34a"/></marker>
+                        <marker id="arrowhead-in-red" viewBox="0 0 5 3.5" refX="5" refY="1.75" markerWidth="5" markerHeight="3.5" orient="auto"><polygon points="0 0, 5 1.75, 0 3.5" fill="#dc2626"/></marker>
+                    </defs>
+                    <g id="hub-mass">
+                        <circle cx="100" cy="20" r="18" fill="#f1f5f9" stroke="#94a3b8"/>
+                        <text x="100" y="22" font-size="10" text-anchor="middle">質量(g)</text>
+                    </g>
+                    <g id="hub-volume">
+                        <circle cx="40" cy="130" r="18" fill="#f1f5f9" stroke="#94a3b8"/>
+                        <text x="40" y="132" font-size="10" text-anchor="middle">体積(L)</text>
+                    </g>
+                    <g id="hub-particles">
+                        <circle cx="160" cy="130" r="18" fill="#f1f5f9" stroke="#94a3b8"/>
+                        <text x="160" y="132" font-size="10" text-anchor="middle">個数</text>
+                    </g>
+                    <g id="hub-mol">
+                        <circle cx="100" cy="80" r="28" fill="#0ea5e9"/>
+                        <text x="100" y="85" font-size="16" fill="white" text-anchor="middle" font-weight="bold">mol</text>
+                    </g>
+                    <!-- Arrows for mass -->
+                    <path d="M97,38 L97,52" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowhead-in-red)"/>
+                    <path d="M103,52 L103,38" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrowhead-out-green)"/>
+                    <text x="105" y="45" font-size="6" fill="#16a34a">×モル質量</text>
+                    <text x="95" y="45" font-size="6" fill="#dc2626" text-anchor="end">÷モル質量</text>
+                    <!-- Arrows for volume -->
+                    <path d="M51,115 L76,95" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowhead-in-red)"/>
+                    <path d="M81,101 L56,121" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrowhead-out-green)"/>
+                    <text transform="rotate(-40 65 95)" font-size="6" fill="#16a34a">×22.4 L/mol</text>
+                    <text transform="rotate(-40 70 115)" font-size="6" fill="#dc2626" text-anchor="end">÷22.4 L/mol</text>
+                    <!-- Arrows for particles -->
+                    <path d="M149,115 L124,95" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowhead-in-red)"/>
+                    <path d="M119,101 L144,121" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrowhead-out-green)"/>
+                    <text transform="rotate(40 140 90)" font-size="6" fill="#16a34a" text-anchor="end">×アボガドロ定数</text>
+                    <text transform="rotate(40 125 120)" font-size="6" fill="#dc2626">÷アボガドロ定数</text>
+                </svg>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                <div class="w-full sm:w-auto">
+                     <label for="substanceSelect" class="text-sm font-bold block text-center sm:text-left mb-1">物質の選択:</label>
+                     <select id="substanceSelect" class="w-full p-2 border rounded-md bg-white shadow-sm">
+                         <option value="H2O" data-mass="18.0" data-state="liquid">水 (H₂O)</option>
+                         <option value="CO2" data-mass="44.0" data-state="gas">二酸化炭素 (CO₂)</option>
+                         <option value="NH3" data-mass="17.0" data-state="gas">アンモニア (NH₃)</option>
+                         <option value="H2" data-mass="2.0" data-state="gas">水素 (H₂)</option>
+                         <option value="O2" data-mass="32.0" data-state="gas">酸素 (O₂)</option>
+                         <option value="He" data-mass="4.0" data-state="gas">ヘリウム (He)</option>
+                         <option value="HNO3" data-mass="63.0" data-state="liquid">硝酸 (HNO₃)</option>
+                         <option value="H2SO4" data-mass="98.0" data-state="liquid">硫酸 (H₂SO₄)</option>
+                         <option value="CH3COOH" data-mass="60.0" data-state="liquid">酢酸 (CH₃COOH)</option>
+                         <option value="Na" data-mass="23.0" data-state="solid">ナトリウム (Na)</option>
+                         <option value="Ca" data-mass="40.0" data-state="solid">カルシウム (Ca)</option>
+                         <option value="Fe" data-mass="56.0" data-state="solid">鉄 (Fe)</option>
+                     </select>
+                </div>
+                <div class="switch-container">
+                    <div id="switchToUse" class="switch-btn active">mol を使う</div>
+                    <div id="switchToFind" class="switch-btn">mol を求める</div>
+                </div>
+            </div>
+
+            <div id="calcUseMol" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-green-50 rounded-xl">
+                    <h3 class="font-bold text-xl text-green-700">質量 (g) への換算</h3>
+                    <label id="massMolLabel" for="massMolInput" class="text-sm font-bold">水のmol:</label>
+                    <input type="number" id="massMolInput" value="1" min="0" step="0.1" class="w-full p-2 border rounded-md">
+                    <p class="calc-formula" id="massMolFormula"></p>
+                    <p class="text-xl text-center font-bold text-red-500 bg-white p-2 rounded-md"><span id="massResult">18.0</span> g</p>
+                </div>
+                <div id="volumeMolCard" class="p-4 bg-purple-50 rounded-xl relative">
+                    <h3 class="font-bold text-xl text-purple-700">気体の体積 (L) への換算</h3>
+                     <label class="text-sm font-bold">気体のmol:</label>
+                    <input type="number" id="volumeMolInput" value="1" min="0" step="0.1" class="w-full p-2 border rounded-md">
+                    <p class="calc-formula" id="volumeMolFormula"></p>
+                    <p class="text-xl text-center font-bold text-red-500 bg-white p-2 rounded-md"><span id="volumeResult">22.4</span> L</p>
+                    <div id="volumeOverlayUse" class="absolute inset-0 bg-slate-200/80 rounded-xl flex items-center justify-center text-center p-4 font-bold text-slate-600 hidden">
+                        <span></span>
+                    </div>
+                </div>
+                <div class="p-4 bg-yellow-50 rounded-xl">
+                    <h3 class="font-bold text-xl text-yellow-700">粒子の数 (個) への換算</h3>
+                    <label class="text-sm font-bold">物質のmol:</label>
+                    <input type="number" id="particleMolInput" value="1" min="0" step="0.1" class="w-full p-2 border rounded-md">
+                    <p class="calc-formula" id="particleMolFormula"></p>
+                    <p class="text-xl text-center font-bold text-red-500 bg-white p-2 rounded-md">
+                        <span id="particleResult_coeff">6.00</span> × 10<sup id="particleResult_exp">23</sup> 個
+                    </p>
+                </div>
+            </div>
+
+            <div id="calcFindMol" class="grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
+                <div class="p-4 bg-green-50 rounded-xl">
+                    <h3 class="font-bold text-xl text-green-700">質量 (g) から換算</h3>
+                    <label id="massLabel" for="massInput" class="text-sm font-bold">水の質量 (g):</label>
+                    <input type="number" id="massInput" value="18.0" min="0" class="w-full p-2 border rounded-md">
+                    <p class="calc-formula" id="massInputFormula"></p>
+                    <p class="text-xl text-center font-bold text-blue-500 bg-white p-2 rounded-md"><span id="molFromMassResult">1.00</span> mol</p>
+                </div>
+                <div id="volumeFindCard" class="p-4 bg-purple-50 rounded-xl relative">
+                    <h3 class="font-bold text-xl text-purple-700">気体の体積 (L) から換算</h3>
+                     <label class="text-sm font-bold">気体の体積 (L):</label>
+                    <input type="number" id="volumeInput" value="22.4" min="0" class="w-full p-2 border rounded-md">
+                    <p class="calc-formula" id="volumeInputFormula"></p>
+                    <p class="text-xl text-center font-bold text-blue-500 bg-white p-2 rounded-md"><span id="molFromVolumeResult">1.00</span> mol</p>
+                    <div id="volumeOverlayFind" class="absolute inset-0 bg-slate-200/80 rounded-xl flex items-center justify-center text-center p-4 font-bold text-slate-600 hidden">
+                        <span></span>
+                    </div>
+                </div>
+                <div class="p-4 bg-yellow-50 rounded-xl">
+                    <h3 class="font-bold text-xl text-yellow-700">粒子の数 (個) から換算</h3>
+                    <label class="text-sm font-bold">粒子の数 (個):</label>
+                    <div class="flex items-center justify-center gap-1 my-1">
+                        <input type="number" id="particleCoeffInput" value="6.0" step="0.1" class="w-full p-2 border rounded-md text-right">
+                        <span class="font-bold text-slate-600">× 10</span>
+                        <input type="number" id="particleExpInput" value="23" step="1" class="w-20 p-2 border rounded-md text-center">
+                    </div>
+                    <p class="calc-formula" id="particleInputFormula"></p>
+                    <p class="text-xl text-center font-bold text-blue-500 bg-white p-2 rounded-md"><span id="molFromParticleResult">1.00</span> mol</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- まとめ -->
+    <div id="summary" class="section bg-gradient-to-t from-slate-900 to-slate-800 text-white">
+        <div class="card fade-in bg-slate-700/50 backdrop-blur-sm border-slate-600">
+            <h2 class="text-3xl md:text-4xl text-center mb-6">molの本質</h2>
+            <p class="text-xl text-center mb-6">molとは、<span class="highlight">目に見えない原子の「個数」の世界と、私たちが測れる「グラム」の世界を繋ぐ、奇跡の翻訳機</span>なのです。</p>
+            <div class="space-y-4 text-left p-6 bg-slate-800 rounded-lg">
+                <p class="text-lg">✅ <span class="font-bold text-sky-300">相対質量：</span> 軽すぎる問題を解決。「¹²Cを12」としたときの、原子1個レベルの質量の"比"。</p>
+                <p class="text-lg">✅ <span class="font-bold text-sky-300">原子量：</span> 自然界のリアルを反映。同位体の存在比を考慮した、相対質量の"平均値"。</p>
+                 <p class="text-lg">✅ <span class="font-bold text-indigo-300">分子量・式量：</span> 原子量の応用編。分子やイオン結晶に含まれる原子の原子量の"合計値"。</p>
+                <p class="text-lg">✅ <span class="font-bold text-yellow-300">1 mol：</span> 多すぎる問題を解決。「原子量g」の物質に含まれる粒子の"かたまり"（＝6.0×10²³個）。</p>
+                <p class="text-lg">✅ <span class="font-bold text-yellow-300">モル質量：</span> 1molあたりの質量(g)。原子量や分子量と同じ数値になるのは、molがそうなるように定義されたから！</p>
+            </div>
+            <p class="mt-8 text-xl font-bold text-center">この関係性を理解すれば、どんな化学計算も怖くない！</p>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    /**
+     * Main App Module
+     * 各章のインタラクティブ機能を初期化・管理します。
+     */
+    const MolAdventure = {
+        init() {
+            this.observeFadeIn();
+            BalanceGame.init();
+            IsotopeAnimation.init();
+            MoleCalculator.init();
+        },
+
+        observeFadeIn() {
+            const faders = document.querySelectorAll('.fade-in');
+            const appearOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
+            const appearOnScroll = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('visible');
+                    // 第3章のカードが見えたらアニメーションを開始
+                    if(entry.target.parentElement.id === 'atomic-weight'){
+                        IsotopeAnimation.start();
+                    }
+                    observer.unobserve(entry.target);
+                });
+            }, appearOptions);
+            faders.forEach(fader => appearOnScroll.observe(fader));
+        }
+    };
+
+    /**
+     * 第2章：てんびんゲーム
+     */
+    const BalanceGame = {
+        elements: {},
+        state: { massLeft: 0, massRight: 0, draggedElement: null, leftPanAtomType: null, rightPanAtomType: null },
+
+        init() {
+            this.elements = {
+                beam: document.getElementById('balanceBeam'),
+                panLeft: document.getElementById('panLeft'),
+                panRight: document.getElementById('panRight'),
+                atomSources: document.querySelectorAll('#atomPalette .atom-source'),
+                resultText: document.getElementById('balanceResult'),
+                resetBtn: document.getElementById('resetBalanceBtn'),
+            };
+            this.addEventListeners();
+            this.reset();
+        },
+
+        addEventListeners() {
+            this.elements.atomSources.forEach(atom => {
+                atom.addEventListener('dragstart', this.handleDragStart.bind(this));
+                atom.addEventListener('dragend', this.handleDragEnd.bind(this));
+            });
+            [this.elements.panLeft, this.elements.panRight].forEach(pan => {
+                pan.addEventListener('dragover', this.handleDragOver.bind(this));
+                pan.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                pan.addEventListener('drop', this.handleDrop.bind(this));
+            });
+            this.elements.resetBtn.addEventListener('click', this.reset.bind(this));
+        },
+        
+        handleDragStart(e) {
+            this.state.draggedElement = e.target;
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                mass: e.target.dataset.mass,
+                color: e.target.dataset.color,
+                text: e.target.dataset.text
+            }));
+        },
+
+        handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        },
+        
+        handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drop-active');
+        },
+        
+        handleDragLeave(e) {
+            e.currentTarget.classList.remove('drop-active');
+        },
+
+        handleDrop(e) {
+            e.preventDefault();
+            const targetPan = e.currentTarget;
+            targetPan.classList.remove('drop-active');
+            if (targetPan.children.length >= 12) return;
+            
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const atomType = data.text;
+
+            let currentPanType, panStateKey;
+
+            if (targetPan === this.elements.panLeft) {
+                currentPanType = this.state.leftPanAtomType;
+                panStateKey = 'leftPanAtomType';
+            } else {
+                currentPanType = this.state.rightPanAtomType;
+                panStateKey = 'rightPanAtomType';
+            }
+
+            if (currentPanType && currentPanType !== atomType) {
+                this.updateResultMessage('同じ種類の原子を乗せてください。', '#ef4444');
+                setTimeout(() => {
+                    if (this.elements.resultText.textContent === '同じ種類の原子を乗せてください。') {
+                        this.updateBalance();
+                    }
+                }, 2000);
+                return;
+            }
+
+            if (!currentPanType) {
+                this.state[panStateKey] = atomType;
+            }
+
+            if (targetPan === this.elements.panLeft) {
+                this.state.massLeft += parseInt(data.mass);
+            } else {
+                this.state.massRight += parseInt(data.mass);
+            }
+            
+            const newAtom = document.createElement('div');
+            newAtom.className = `atom-source ${data.color}`;
+            newAtom.textContent = data.text;
+            newAtom.dataset.mass = data.mass;
+            newAtom.dataset.text = data.text;
+            newAtom.style.position = 'relative';
+            targetPan.appendChild(newAtom);
+            this.updateBalance();
+        },
+
+        updateBalance() {
+            const diff = this.state.massRight - this.state.massLeft;
+            let rotation = Math.max(-30, Math.min(30, diff * 1.5));
+            this.elements.beam.style.transform = `rotate(${rotation}deg)`;
+
+            if (this.state.massLeft === 0 && this.state.massRight === 0) {
+                 this.updateResultMessage('天秤に原子を乗せてみよう', '#64748b');
+            } else if (diff === 0 && this.state.massLeft > 0) {
+                if (this.elements.panRight.children.length > 0) {
+                    const rightAtomElement = this.elements.panRight.children[0];
+                    const rightAtomText = rightAtomElement.dataset.text;
+                    const rightAtomMass = rightAtomElement.dataset.mass;
+                    
+                    const message = `🎉 釣り合いました！ ¹²Cの相対質量を12とすると、${rightAtomText}の相対質量は${rightAtomMass}です。`;
+                    this.updateResultMessage(message, '#16a34a');
+                } else {
+                    this.updateResultMessage('🎉 釣り合いました！', '#16a34a');
+                }
+            } else if (diff > 0) {
+                this.updateResultMessage('😲 左側が軽いようです！', '#ef4444');
+            } else {
+                this.updateResultMessage('🤔 右側が軽いようです...', '#f59e0b');
+            }
+        },
+
+        updateResultMessage(message, color) {
+            this.elements.resultText.textContent = message;
+            this.elements.resultText.style.color = color;
+        },
+
+        reset() {
+            this.elements.panLeft.innerHTML = '';
+            this.elements.panRight.innerHTML = '';
+
+            const carbon = document.createElement('div');
+            carbon.className = 'atom-source bg-gray-600';
+            carbon.textContent = '¹²C';
+            carbon.dataset.mass = '12';
+            carbon.dataset.text = '¹²C';
+            carbon.style.position = 'relative';
+            this.elements.panLeft.appendChild(carbon);
+
+            this.state.massLeft = 12;
+            this.state.massRight = 0;
+            this.state.leftPanAtomType = '¹²C';
+            this.state.rightPanAtomType = null;
+            
+            this.updateBalance();
+            this.updateResultMessage('右の皿に原子を乗せてみよう', '#64748b');
+        }
+    };
+
+    /**
+     * 第3章：同位体アニメーション
+     */
+    const IsotopeAnimation = {
+        elements: {},
+        state: { atoms: [], animationFrameId: null, isPaused: false, isAligned: false },
+        config: {
+            NUM_ATOMS: 100,
+            RADIUS: 6,
+            LIGHT_RATIO: 0.75,
+            LIGHT_COLOR: '#3b82f6', // blue-500
+            HEAVY_COLOR: '#dc2626'  // red-600
+        },
+
+        init() {
+            this.elements = {
+                canvas: document.getElementById('isotopeCanvas'),
+                ctx: document.getElementById('isotopeCanvas').getContext('2d'),
+                stopBtn: document.getElementById('isotopeStopBtn'),
+                alignBtn: document.getElementById('isotopeAlignBtn'),
+                infoText: document.getElementById('isotopeInfo'),
+            };
+            this.addEventListeners();
+        },
+
+        start() {
+            if (this.state.atoms.length > 0 && !this.state.isAligned) return;
+            this.state.isAligned = false;
+
+            this.elements.canvas.width = this.elements.canvas.offsetWidth;
+            this.elements.canvas.height = this.elements.canvas.offsetHeight;
+            
+            this.state.isPaused = false;
+            this.elements.stopBtn.textContent = 'ストップ';
+            this.elements.infoText.textContent = '';
+            this.state.atoms = [];
+            for (let i = 0; i < this.config.NUM_ATOMS; i++) {
+                const isLight = i < this.config.NUM_ATOMS * this.config.LIGHT_RATIO;
+                this.state.atoms.push({
+                    x: this.config.RADIUS + Math.random() * (this.elements.canvas.width - 2 * this.config.RADIUS),
+                    y: this.config.RADIUS + Math.random() * (this.elements.canvas.height - 2 * this.config.RADIUS),
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    type: isLight ? 'light' : 'heavy',
+                    color: isLight ? this.config.LIGHT_COLOR : this.config.HEAVY_COLOR,
+                    targetX: 0,
+                    targetY: 0
+                });
+            }
+            if(this.state.animationFrameId) cancelAnimationFrame(this.state.animationFrameId);
+            this.animate();
+        },
+
+        addEventListeners() {
+            this.elements.stopBtn.addEventListener('click', this.togglePause.bind(this));
+            this.elements.alignBtn.addEventListener('click', this.alignAtoms.bind(this));
+        },
+        
+        togglePause() {
+             if (this.state.isAligned) {
+                this.start();
+                return;
+            }
+            this.state.isPaused = !this.state.isPaused;
+            this.elements.stopBtn.textContent = this.state.isPaused ? '再開' : 'ストップ';
+            if (!this.state.isPaused) {
+                this.animate();
+            }
+        },
+
+        alignAtoms() {
+            if (this.state.isAligned) return;
+            this.state.isAligned = true;
+            this.state.isPaused = true;
+            this.elements.stopBtn.textContent = 'リセット';
+
+            const lightAtoms = this.state.atoms.filter(a => a.type === 'light');
+            const heavyAtoms = this.state.atoms.filter(a => a.type === 'heavy');
+            
+            this.elements.infoText.textContent = `軽い³⁵Cl (青): ${lightAtoms.length}個, 重い³⁷Cl (赤): ${heavyAtoms.length}個`;
+            
+            const padding = 20;
+            const spacing = this.config.RADIUS * 2.5;
+            const itemsPerRow = Math.floor((this.elements.canvas.width - padding * 2) / spacing);
+
+            let row = 0;
+            let col = 0;
+            
+            const setTarget = (atom) => {
+                atom.targetX = padding + col * spacing;
+                atom.targetY = padding + row * spacing;
+                col++;
+                if (col >= itemsPerRow) {
+                    col = 0;
+                    row++;
+                }
+            };
+            
+            lightAtoms.forEach(setTarget);
+            heavyAtoms.forEach(setTarget);
+            
+            let startTime = null;
+            const duration = 1000;
+            const easeInOutQuad = t => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+            const animateAlign = (timestamp) => {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const easedProgress = easeInOutQuad(progress);
+
+                this.state.atoms.forEach(atom => {
+                    atom.x = atom.startX + (atom.targetX - atom.startX) * easedProgress;
+                    atom.y = atom.startY + (atom.targetY - atom.startY) * easedProgress;
+                });
+                
+                this.draw();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateAlign);
+                }
+            };
+
+            this.state.atoms.forEach(atom => {
+                atom.startX = atom.x;
+                atom.startY = atom.y;
+            });
+
+            requestAnimationFrame(animateAlign);
+        },
+
+        animate() {
+            if (this.state.isPaused) return;
+            this.update();
+            this.draw();
+            this.state.animationFrameId = requestAnimationFrame(this.animate.bind(this));
+        },
+        
+        update() {
+            this.state.atoms.forEach(atom => {
+                atom.x += atom.vx;
+                atom.y += atom.vy;
+                if (atom.x <= this.config.RADIUS || atom.x >= this.elements.canvas.width - this.config.RADIUS) atom.vx *= -1;
+                if (atom.y <= this.config.RADIUS || atom.y >= this.elements.canvas.height - this.config.RADIUS) atom.vy *= -1;
+            });
+        },
+        
+        draw() {
+            this.elements.ctx.clearRect(0, 0, this.elements.canvas.width, this.elements.canvas.height);
+            this.state.atoms.forEach(atom => {
+                this.elements.ctx.beginPath();
+                this.elements.ctx.arc(atom.x, atom.y, this.config.RADIUS, 0, Math.PI * 2);
+                this.elements.ctx.fillStyle = atom.color;
+                this.elements.ctx.fill();
+            });
+        }
+    };
+
+    /**
+     * 第5章：mol計算機
+     */
+    const MoleCalculator = {
+        elements: {},
+        constants: {
+            AVOGADRO: 6.0e23,
+            MOLAR_VOLUME: 22.4,
+        },
+
+        init() {
+            this.elements = {
+                switchToUse: document.getElementById('switchToUse'),
+                switchToFind: document.getElementById('switchToFind'),
+                calcUseMol: document.getElementById('calcUseMol'),
+                calcFindMol: document.getElementById('calcFindMol'),
+                
+                substanceSelect: document.getElementById('substanceSelect'),
+
+                massMolLabel: document.getElementById('massMolLabel'),
+                massMolInput: document.getElementById('massMolInput'),
+                massMolFormula: document.getElementById('massMolFormula'),
+                massResult: document.getElementById('massResult'),
+                
+                volumeMolCard: document.getElementById('volumeMolCard'),
+                volumeMolInput: document.getElementById('volumeMolInput'),
+                volumeMolFormula: document.getElementById('volumeMolFormula'),
+                volumeResult: document.getElementById('volumeResult'),
+                volumeOverlayUse: document.getElementById('volumeOverlayUse'),
+
+                particleMolInput: document.getElementById('particleMolInput'),
+                particleMolFormula: document.getElementById('particleMolFormula'),
+                particleResult_coeff: document.getElementById('particleResult_coeff'),
+                particleResult_exp: document.getElementById('particleResult_exp'),
+                
+                massLabel: document.getElementById('massLabel'),
+                massInput: document.getElementById('massInput'),
+                massInputFormula: document.getElementById('massInputFormula'),
+                molFromMassResult: document.getElementById('molFromMassResult'),
+
+                volumeFindCard: document.getElementById('volumeFindCard'),
+                volumeInput: document.getElementById('volumeInput'),
+                volumeInputFormula: document.getElementById('volumeInputFormula'),
+                molFromVolumeResult: document.getElementById('molFromVolumeResult'),
+                volumeOverlayFind: document.getElementById('volumeOverlayFind'),
+                
+                particleCoeffInput: document.getElementById('particleCoeffInput'),
+                particleExpInput: document.getElementById('particleExpInput'),
+                particleInputFormula: document.getElementById('particleInputFormula'),
+                molFromParticleResult: document.getElementById('molFromParticleResult')
+            };
+            this.addEventListeners();
+            this.calculateAll();
+        },
+        
+        addEventListeners() {
+            this.elements.switchToUse.addEventListener('click', () => this.toggleView('use'));
+            this.elements.switchToFind.addEventListener('click', () => this.toggleView('find'));
+            
+            this.elements.substanceSelect.addEventListener('change', () => this.calculateAll());
+
+            // Add event listeners to all input fields, passing the event target for sync logic
+            Object.keys(this.elements).forEach(key => {
+                if (key.endsWith('Input')) {
+                    this.elements[key].addEventListener('input', (e) => this.calculateAll(e.target));
+                }
+            });
+        },
+        
+        toggleView(view) {
+            if (view === 'use') {
+                this.elements.switchToUse.classList.add('active');
+                this.elements.switchToFind.classList.remove('active');
+                this.elements.calcUseMol.classList.remove('hidden');
+                this.elements.calcFindMol.classList.add('hidden');
+            } else {
+                this.elements.switchToUse.classList.remove('active');
+                this.elements.switchToFind.classList.add('active');
+                this.elements.calcUseMol.classList.add('hidden');
+                this.elements.calcFindMol.classList.remove('hidden');
+            }
+            this.calculateAll();
+        },
+        
+        updateGasState() {
+            const selectedOption = this.elements.substanceSelect.options[this.elements.substanceSelect.selectedIndex];
+            const state = selectedOption.dataset.state;
+            const substanceName = selectedOption.textContent.split(' ')[0];
+            const message = `${substanceName}は常温で気体ではありません`;
+
+            const cards = [this.elements.volumeMolCard, this.elements.volumeFindCard];
+            const overlays = [this.elements.volumeOverlayUse, this.elements.volumeOverlayFind];
+
+            if (state !== 'gas') {
+                cards.forEach(card => card.classList.add('calc-box-disabled'));
+                overlays.forEach(overlay => {
+                    overlay.querySelector('span').textContent = message;
+                    overlay.classList.remove('hidden');
+                });
+            } else {
+                cards.forEach(card => card.classList.remove('calc-box-disabled'));
+                overlays.forEach(overlay => {
+                    overlay.classList.add('hidden');
+                });
+            }
+        },
+
+        calculateAll(sourceInput = null) {
+            this.updateGasState();
+
+            const selectedOption = this.elements.substanceSelect.options[this.elements.substanceSelect.selectedIndex];
+            const molarMass = parseFloat(selectedOption.dataset.mass);
+            const substanceName = selectedOption.textContent.split(' ')[0];
+
+            this.elements.massMolLabel.textContent = `${substanceName}のmol:`;
+            this.elements.massLabel.textContent = `${substanceName}の質量 (g):`;
+
+            let currentMol = 0;
+
+            const findMolInputs = [this.elements.massInput, this.elements.volumeInput, this.elements.particleCoeffInput, this.elements.particleExpInput];
+            const useMolInputs = [this.elements.massMolInput, this.elements.volumeMolInput, this.elements.particleMolInput];
+
+            if (findMolInputs.includes(sourceInput)) {
+                if (sourceInput === this.elements.massInput) {
+                    const mass = parseFloat(this.elements.massInput.value) || 0;
+                    currentMol = molarMass ? mass / molarMass : 0;
+                } else if (sourceInput === this.elements.volumeInput) {
+                    const volume = parseFloat(this.elements.volumeInput.value) || 0;
+                    currentMol = volume / this.constants.MOLAR_VOLUME;
+                } else {
+                    const coeff = parseFloat(this.elements.particleCoeffInput.value) || 0;
+                    const exp = parseFloat(this.elements.particleExpInput.value) || 0;
+                    currentMol = (coeff * Math.pow(10, exp)) / this.constants.AVOGADRO;
+                }
+            } else if (useMolInputs.includes(sourceInput)) {
+                 currentMol = parseFloat(sourceInput.value) || 0;
+            } else {
+                 // Fallback for initial load or substance change
+                const currentViewIsUse = !this.elements.calcUseMol.classList.contains('hidden');
+                if (currentViewIsUse) {
+                    currentMol = parseFloat(this.elements.massMolInput.value) || 0;
+                } else {
+                    const mass = parseFloat(this.elements.massInput.value) || 0;
+                    currentMol = molarMass ? mass / molarMass : 0;
+                }
+            }
+
+            const massVal = currentMol * molarMass;
+            const volumeVal = currentMol * this.constants.MOLAR_VOLUME;
+            const particlesVal = currentMol * this.constants.AVOGADRO;
+            const sciNotation = particlesVal > 0 ? particlesVal.toExponential(2) : "0.00e+0";
+            const [coeffVal, expVal] = sciNotation.split('e');
+            const formattedMol = parseFloat(currentMol.toPrecision(4));
+
+            useMolInputs.forEach(input => {
+                if (input !== sourceInput) input.value = formattedMol;
+            });
+
+            if (sourceInput !== this.elements.massInput) {
+                this.elements.massInput.value = parseFloat(massVal.toPrecision(3));
+            }
+            if (sourceInput !== this.elements.volumeInput) {
+                this.elements.volumeInput.value = parseFloat(volumeVal.toPrecision(3));
+            }
+            if (sourceInput !== this.elements.particleCoeffInput && sourceInput !== this.elements.particleExpInput) {
+                this.elements.particleCoeffInput.value = parseFloat(coeffVal);
+                this.elements.particleExpInput.value = parseInt(expVal.replace('+', ''), 10);
+            }
+
+            this.elements.massResult.textContent = massVal.toPrecision(3);
+            this.elements.massMolFormula.textContent = `${formattedMol} mol × ${molarMass} g/mol`;
+            this.elements.volumeResult.textContent = volumeVal.toPrecision(3);
+            this.elements.volumeMolFormula.textContent = `${formattedMol} mol × ${this.constants.MOLAR_VOLUME} L/mol`;
+            this.elements.particleResult_coeff.textContent = coeffVal;
+            this.elements.particleResult_exp.textContent = parseInt(expVal.replace('+', ''), 10);
+            this.elements.particleMolFormula.innerHTML = `${formattedMol} mol × 6.0×10<sup>23</sup> /mol`;
+            
+            const massFromInput = parseFloat(this.elements.massInput.value) || 0;
+            this.elements.molFromMassResult.textContent = (molarMass ? massFromInput / molarMass : 0).toPrecision(3);
+            this.elements.massInputFormula.textContent = `${massFromInput} g ÷ ${molarMass} g/mol`;
+            const volumeFromInput = parseFloat(this.elements.volumeInput.value) || 0;
+            this.elements.molFromVolumeResult.textContent = (volumeFromInput / this.constants.MOLAR_VOLUME).toPrecision(3);
+            this.elements.volumeInputFormula.textContent = `${volumeFromInput} L ÷ ${this.constants.MOLAR_VOLUME} L/mol`;
+            const coeffFromInput = parseFloat(this.elements.particleCoeffInput.value) || 0;
+            const expFromInput = parseFloat(this.elements.particleExpInput.value) || 0;
+            const particlesFromInput = coeffFromInput * Math.pow(10, expFromInput);
+            this.elements.molFromParticleResult.textContent = (particlesFromInput / this.constants.AVOGADRO).toPrecision(3);
+            this.elements.particleInputFormula.innerHTML = `${coeffFromInput}×10<sup>${expFromInput}</sup> 個 ÷ 6.0×10<sup>23</sup> /mol`;
+        }
+    };
+
+    // Initialize the main application
+    MolAdventure.init();
+});
+</script>
+</body>
+</html>
+
