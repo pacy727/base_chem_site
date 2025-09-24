@@ -187,6 +187,14 @@
                     </a>
                 </div>
 
+                <!-- Group 4: トレーニング -->
+                <div class="md:col-start-7 md:col-span-4 mt-16 animate-on-scroll slide-from-left-diag">
+                    <a href="molmaster.html" class="topic-card">
+                        <h3 class="text-2xl font-bold text-purple-300 mb-3 text-center">モル・マスターへの道</h3>
+                        <p class="text-slate-400">モル計算のトレーニング！</p>
+                    </a>
+                </div>
+
             </div>
         </div>
     </div>
@@ -304,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // アニメーションの各フェーズの境界となる位置を定義
             const wipeInStartPos = viewportHeight; // フェードイン開始位置（要素の上端が画面下部に到達した時）
-            const fullVisibilityStartPos = viewportHeight * 0.85; // 完全に表示される位置（要素の上端が画面の85%を通過した時）
+            const fullVisibilityStartPos = viewportHeight * 0.5; // 完全に表示される位置（要素の上端が画面の85%を通過した時）
             const wipeOutStartPos = viewportHeight * 0.2; // フェードアウト開始位置（要素の上端が画面の20%を通過した時）
             const wipeOutEndPos = -rect.height; // フェードアウト完了位置（要素の下端が画面上部を通過した時）
 
@@ -371,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
