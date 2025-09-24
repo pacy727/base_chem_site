@@ -121,7 +121,7 @@
     <div class="hero-section">
         <div class="hero-content">
             <h1 class="text-4xl md:text-6xl lg:text-7xl mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-indigo-400">化学基礎入門</h1>
-            <p class="text-lg md:text-2xl text-slate-300 mb-10 max-w-3xl mx-auto"></p>
+            <p class="text-lg md:text-2xl text-slate-300 mb-10 max-w-3xl mx-auto">インタラクティブな学習体験で、化学の基本をマスターしよう。</p>
         </div>
     </div>
 
@@ -136,7 +136,7 @@
             <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
                 
                 <!-- Group 1: 原子・分子・物質 -->
-                <div class="md:col-span-4 animate-on-scroll slide-from-left-diag">
+                <div class="md:col-span-6 animate-on-scroll slide-from-left-diag">
                     <a href="#" class="topic-card">
                         <h3 class="text-2xl font-bold text-sky-300 mb-3 text-center">原子について</h3>
                         <p class="text-slate-400">すべての物質の基本となる小さな粒。その構造や、周期表の秘密に迫ります。</p>
@@ -174,7 +174,7 @@
 
                 <!-- Group 3: 酸と塩基・酸化還元 -->
                 <div class="md:col-start-3 md:col-span-4 mt-16 animate-on-scroll slide-from-right-diag">
-                       <a href="#" class="topic-card">
+                        <a href="#" class="topic-card">
                         <h3 class="text-2xl font-bold text-rose-300 mb-3 text-center">酸と塩基</h3>
                         <p class="text-slate-400">身の回りにあふれる酸性・アルカリ性。中和反応やpHの概念を学び、その性質を解き明かします。</p>
                     </a>
@@ -186,15 +186,13 @@
                         <p class="text-slate-400">電子のやり取りで起こる化学反応。電池の仕組みから金属のイオン化傾向までを学びます。</p>
                     </a>
                 </div>
-                <br><br><br><br><br><br><br>
                 <!-- Group 4: トレーニング -->
-                <div class="md:col-start-5 md:col-span-4 mt-0 md:-mt-24 animate-on-scroll slide-from-left">
+                <div class="md:col-start-5 md:col-span-6 mt-20 mb-20 animate-on-scroll slide-from-left">
                     <a href="molmaster.html" class="topic-card">
                         <h3 class="text-2xl font-bold text-purple-300 mb-3 text-center">モル・マスターへの道</h3>
                         <p class="text-slate-400">モル計算のトレーニング！</p>
                     </a>
                 </div>
-                <br><br><br><br><br><br><br>
 
             </div>
         </div>
@@ -311,31 +309,25 @@ document.addEventListener('DOMContentLoaded', () => {
         animatedElements.forEach(el => {
             const rect = el.getBoundingClientRect();
 
-            // アニメーションの各フェーズの境界となる位置を定義
-            const wipeInStartPos = viewportHeight; // フェードイン開始位置（要素の上端が画面下部に到達した時）
-            const fullVisibilityStartPos = viewportHeight * 0.5; // 完全に表示される位置（要素の上端が画面の85%を通過した時）
-            const wipeOutStartPos = viewportHeight * 0.2; // フェードアウト開始位置（要素の上端が画面の20%を通過した時）
-            const wipeOutEndPos = -rect.height; // フェードアウト完了位置（要素の下端が画面上部を通過した時）
+            const wipeInStartPos = viewportHeight;
+            const fullVisibilityStartPos = viewportHeight * 0.5;
+            const wipeOutStartPos = viewportHeight * 0.2;
+            const wipeOutEndPos = -rect.height;
 
             let progress = 0;
 
             if (rect.top <= fullVisibilityStartPos && rect.top > wipeOutStartPos) {
-                // フェーズ2: 要素が完全に表示されている状態
                 progress = 1;
             } else if (rect.top > fullVisibilityStartPos && rect.top <= wipeInStartPos) {
-                // フェーズ1: 画面下部からワイプイン
                 progress = (wipeInStartPos - rect.top) / (wipeInStartPos - fullVisibilityStartPos);
             } else if (rect.top <= wipeOutStartPos && rect.top > wipeOutEndPos) {
-                // フェーズ3: 画面上部へワイプアウト
                 progress = (rect.top - wipeOutEndPos) / (wipeOutStartPos - wipeOutEndPos);
             }
             
-            // progressの値を0から1の間に収める
             progress = Math.max(0, Math.min(1, progress));
 
             el.style.opacity = progress;
 
-            // イージング関数を適用して、アニメーションに滑らかさを加える
             const easedProgress = 1 - Math.pow(1 - progress, 3); // EaseOutCubic
             const reverseProgress = 1 - easedProgress;
             const scale = 0.8 + (0.2 * easedProgress);
@@ -380,12 +372,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
-
-
-
-
-
-
 
 
