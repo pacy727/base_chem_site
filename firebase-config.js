@@ -1,5 +1,5 @@
 const firebaseConfig = {
-    apiKey: "ここに新しいAPIキーを入れる",
+    apiKey: "AIzaSyCi8bGd1qt5QJNQKfqzWDRsgqdHZwLqdVs",
     authDomain: "molmaster.firebaseapp.com",
     projectId: "molmaster",
     storageBucket: "molmaster.firebasestorage.app",
