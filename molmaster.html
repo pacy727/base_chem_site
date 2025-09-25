@@ -97,12 +97,64 @@
                 transform: translate(var(--end-x), var(--end-y)) rotate3d(var(--rot-x), var(--rot-y), var(--rot-z), 720deg) scale(0);
                 opacity: 0;
             }
+
+            /* ここに追加 */
+            /* ポップアップスタイル */
+            .popup-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 200;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+            }
+            .popup-overlay.active {
+                opacity: 1;
+                pointer-events: all;
+            }
+            .popup-content {
+                background-color: white;
+                padding: 20px;
+                border-radius: 16px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+                max-width: 90%;
+                max-height: 80%;
+                overflow-y: auto;
+                transform: scale(0.8);
+                transition: transform 0.3s ease;
+            }
+            .popup-overlay.active .popup-content {
+                transform: scale(1);
+            }
+            
         }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
     <div id="bg-animation"></div>
     <div id="incorrect-flash"></div>
+    <!-- ルール説明ポップアップ -->
+    <div id="rules-popup" class="popup-overlay">
+        <div class="popup-content">
+            <h3 class="font-bold text-center mb-4 text-xl text-blue-800">【ゲーム説明】</h3>
+            <div class="text-sm text-gray-700 space-y-2">
+                <p>・制限時間は<span class="font-bold text-red-500">60秒</span>！</p>
+                <p>・正解で<span class="font-bold text-green-500">スコアUP</span>＆残り時間<span class="font-bold text-blue-500">+3秒</span>！</p>
+                <p>・不正解だと残り時間<span class="font-bold text-red-600">-5秒</span>！</p>
+                <p>・連続正解で<span class="font-bold text-orange-500">コンボ</span>！スコアがどんどん増えるぞ！</p>
+                <p>・5連続正解で<span class="font-bold text-yellow-500">フィーバータイム</span>！スコア3倍！</p>
+                <p>・正解数が増えると問題の<span class="font-bold text-purple-500">難易度アップ</span>！</p>
+            </div>
+            <button id="close-rules-button" class="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">閉じる</button>
+        </div>
+    </div>
 
     <div id="game-container" class="w-full max-w-md mx-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-8 transform transition-all relative">
         
@@ -138,17 +190,23 @@
             <!-- スタート画面 -->
             <div id="start-screen">
                 <div class="flex justify-center mb-4">
-                     <div class="text-5xl animate-bounce">👨‍🔬</div>
+                     <div class="text-5xl animate-bounce">🧪</div>
                 </div>
                 <h2 class="text-xl font-bold text-gray-800 mb-4">挑戦を始めるかね？</h2>
                 
-                <div class="flex justify-around w-full mb-4 space-x-2 md:space-x-4">
-                    <div class="w-1/3 bg-white/50 p-3 rounded-lg text-center">
+                <!-- 自己ベストとルールボタンを同じ行に配置 -->
+                <div class="flex justify-between items-stretch w-full mb-4 space-x-3">
+                    <div class="flex-1 bg-white/50 p-3 rounded-lg text-center">
                         <h3 class="font-bold text-sm text-blue-800">自己ベスト</h3>
                         <p id="high-score" class="font-orbitron text-2xl text-blue-600">0</p>
                     </div>
-
-                <div class="w-2/3 bg-white/50 p-3 rounded-lg h-32">
+                    <button id="rules-button" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-md transform hover:scale-105 transition-transform">
+                        📖 ルール
+                    </button>
+                </div>
+            
+                <!-- ランキング表示エリア -->
+                <div class="bg-white/50 p-3 rounded-lg h-32 mb-6">
                     <h3 class="font-bold text-sm text-center text-orange-800 mb-2">ランキング</h3>
                     <div class="h-24 overflow-x-auto overflow-y-auto">
                         <ol id="ranking-list" class="list-decimal list-inside text-sm text-left text-orange-700 whitespace-nowrap">
@@ -156,17 +214,7 @@
                         </ol>
                     </div>
                 </div>
-
-                    
-                </div>
-
-                <div class="bg-blue-100/80 text-left p-3 rounded-lg mb-6 text-sm text-gray-700">
-                    <h3 class="font-bold text-center mb-2">【ゲーム説明】</h3>
-                    <p>・制限時間は<span class="font-bold text-red-500">60秒</span>！</p>
-                    <p>・正解で<span class="font-bold text-green-500">スコアUP</span>＆残り時間<span class="font-bold text-blue-500">+3秒</span>！</p>
-                    <p>・不正解だと残り時間<span class="font-bold text-red-600">-5秒</span>！</p>
-                    <p>・連続正解で<span class="font-bold text-orange-500">コンボ</span>！スコアがどんどん増えるぞ！</p>
-                </div>
+            
                 <button id="start-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transform hover:scale-105 transition-transform">ゲームスタート！</button>
             </div>
 
@@ -259,7 +307,11 @@
         const restartButton = document.getElementById('restart-button');
         const backToTitleButton = document.getElementById('back-to-title-button');
         const resultBackToTitleButton = document.getElementById('result-back-to-title-button');
-        
+        // 追加する行
+        const rulesButton = document.getElementById('rules-button');
+        const rulesPopup = document.getElementById('rules-popup');
+        const closeRulesButton = document.getElementById('close-rules-button');
+        //
         const questionTextEl = document.getElementById('question-text');
         const answerForm = document.getElementById('answer-form');
         const unitEl = document.getElementById('unit');
@@ -807,6 +859,16 @@
         restartButton.addEventListener('click', initGame);
         backToTitleButton.addEventListener('click', resetToTitle);
         resultBackToTitleButton.addEventListener('click', resetToTitle);
+
+        // 追加する行
+        rulesButton.addEventListener('click', () => rulesPopup.classList.add('active'));
+        closeRulesButton.addEventListener('click', () => rulesPopup.classList.remove('active'));
+        
+        // ポップアップ背景クリックで閉じる
+        rulesPopup.addEventListener('click', (e) => {
+            if (e.target === rulesPopup) rulesPopup.classList.remove('active');
+        });
+        
         answerForm.addEventListener('submit', checkAnswer);
         saveScoreForm.addEventListener('submit', saveScore);
 
