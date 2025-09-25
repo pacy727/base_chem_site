@@ -97,8 +97,9 @@
                 transform: translate(var(--end-x), var(--end-y)) rotate3d(var(--rot-x), var(--rot-y), var(--rot-z), 720deg) scale(0);
                 opacity: 0;
             }
-
-            /* ここに追加 */
+                       
+        }
+    /* ここに追加 */
             /* ポップアップスタイル */
             .popup-overlay {
                 position: fixed;
@@ -133,8 +134,6 @@
             .popup-overlay.active .popup-content {
                 transform: scale(1);
             }
-            
-        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
