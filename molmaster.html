@@ -611,35 +611,71 @@
             finalCorrectCountEl.textContent = correctCount;
             finalQuestionCountEl.textContent = attemptedQuestions;
             finalAccuracyEl.textContent = accuracy.toFixed(1) + '%';
-
             // --- ここから順位計算ロジックを追加 ---
             const finalRankEl = document.getElementById('final-rank');
-            finalRankEl.classList.add('hidden'); // いったん非表示に
-
-            let rank = -1;
-            for (let i = 0; i < rankingData.length; i++) {
-                if (score > rankingData[i].score) {
-                    rank = i + 1;
-                    break;
-                }
-            }
-            if (rank === -1 && rankingData.length < RANKING_SIZE && score > 0) {
-                rank = rankingData.length + 1;
-            }
-
-            if (rank !== -1) {
+            
+            // スコアが0より大きい場合のみ順位を計算・表示
+            if (score > 0) {
                 try {
                     const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
                     const snapshot = await getCountFromServer(rankingCollection);
                     const totalRecords = snapshot.data().count;
+                    
+                    // 現在のスコアより高いスコアの数を数える
+                    let rank = 1;
+                    for (let i = 0; i < rankingData.length; i++) {
+                        if (score > rankingData[i].score) {
+                            break;
+                        }
+                        rank++;
+                    }
+                    
                     finalRankEl.textContent = `${totalRecords + 1}人中 ${rank}位！`;
                     finalRankEl.classList.remove('hidden');
                 } catch (error) {
                     console.error("Could not get ranking count:", error);
-                    finalRankEl.textContent = `トップ${RANKING_SIZE}入り！ 第${rank}位！`; // 取得失敗時の代替表示
+                    // 取得失敗時は簡易的な順位表示
+                    let rank = 1;
+                    for (let i = 0; i < rankingData.length; i++) {
+                        if (score > rankingData[i].score) {
+                            break;
+                        }
+                        rank++;
+                    }
+                    finalRankEl.textContent = `第${rank}位！`;
                     finalRankEl.classList.remove('hidden');
                 }
+            } else {
+                finalRankEl.classList.add('hidden'); // スコア0の場合は非表示
             }
+            // --- ここから順位計算ロジックを追加 ---
+            // const finalRankEl = document.getElementById('final-rank');
+            // finalRankEl.classList.add('hidden'); // いったん非表示に
+
+            // let rank = -1;
+            // for (let i = 0; i < rankingData.length; i++) {
+            //     if (score > rankingData[i].score) {
+            //         rank = i + 1;
+            //         break;
+            //     }
+            // }
+            // if (rank === -1 && rankingData.length < RANKING_SIZE && score > 0) {
+            //     rank = rankingData.length + 1;
+            // }
+
+            // if (rank !== -1) {
+            //     try {
+            //         const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
+            //         const snapshot = await getCountFromServer(rankingCollection);
+            //         const totalRecords = snapshot.data().count;
+            //         finalRankEl.textContent = `${totalRecords + 1}人中 ${rank}位！`;
+            //         finalRankEl.classList.remove('hidden');
+            //     } catch (error) {
+            //         console.error("Could not get ranking count:", error);
+            //         finalRankEl.textContent = `トップ${RANKING_SIZE}入り！ 第${rank}位！`; // 取得失敗時の代替表示
+            //         finalRankEl.classList.remove('hidden');
+            //     }
+            // }
             // --- 順位計算ロジックここまで ---
             
             const personalBest = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || '0');
