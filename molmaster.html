@@ -187,7 +187,8 @@
             <div id="result-screen" class="hidden">
                  <h2 class="text-2xl font-bold text-red-500 mb-2">タイムアップ！</h2>
                 <p class="text-gray-700">君の最終スコアは...</p>
-                <p id="final-score" class="font-orbitron text-6xl font-bold my-2 text-gray-800">0</p>
+               <p id="final-score" class="font-orbitron text-6xl font-bold my-2 text-gray-800">0</p>
+                <p id="final-rank" class="text-xl font-bold text-amber-600 my-2 hidden"></p>
                 
                 <div class="flex justify-around text-center my-4 bg-white/50 p-3 rounded-lg">
                     <div>
@@ -230,7 +231,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, setLogLevel, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // --- DOM要素の取得 ---
@@ -601,16 +602,45 @@
             showScreen('result-screen');
             finalScoreEl.textContent = score;
 
+            // --- リザルト画面の統計情報を表示 ---
             const finalCorrectCountEl = document.getElementById('final-correct-count');
             const finalQuestionCountEl = document.getElementById('final-question-count');
             const finalAccuracyEl = document.getElementById('final-accuracy');
-
             const attemptedQuestions = questionCount > 1 ? questionCount - 1 : 0;
             const accuracy = attemptedQuestions > 0 ? (correctCount / attemptedQuestions) * 100 : 0;
-
             finalCorrectCountEl.textContent = correctCount;
             finalQuestionCountEl.textContent = attemptedQuestions;
             finalAccuracyEl.textContent = accuracy.toFixed(1) + '%';
+
+            // --- ここから順位計算ロジックを追加 ---
+            const finalRankEl = document.getElementById('final-rank');
+            finalRankEl.classList.add('hidden'); // いったん非表示に
+
+            let rank = -1;
+            for (let i = 0; i < rankingData.length; i++) {
+                if (score > rankingData[i].score) {
+                    rank = i + 1;
+                    break;
+                }
+            }
+            if (rank === -1 && rankingData.length < RANKING_SIZE && score > 0) {
+                rank = rankingData.length + 1;
+            }
+
+            if (rank !== -1) {
+                try {
+                    const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
+                    const snapshot = await getCountFromServer(rankingCollection);
+                    const totalRecords = snapshot.data().count;
+                    finalRankEl.textContent = `${totalRecords + 1}人中 ${rank}位！`;
+                    finalRankEl.classList.remove('hidden');
+                } catch (error) {
+                    console.error("Could not get ranking count:", error);
+                    finalRankEl.textContent = `トップ${RANKING_SIZE}入り！ 第${rank}位！`; // 取得失敗時の代替表示
+                    finalRankEl.classList.remove('hidden');
+                }
+            }
+            // --- 順位計算ロジックここまで ---
             
             const personalBest = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || '0');
             if (score > personalBest) localStorage.setItem(HIGH_SCORE_KEY, score);
