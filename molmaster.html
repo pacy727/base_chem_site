@@ -597,7 +597,7 @@
             if (timeLeft > 0) generateQuestion(); else endGame();
         }
         
-        function endGame() {
+        async function endGame() {
             clearInterval(timerInterval);
             showScreen('result-screen');
             finalScoreEl.textContent = score;
