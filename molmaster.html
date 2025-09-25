@@ -233,7 +233,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, setLogLevel, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
+        import firebaseConfig from './firebase-config.js';
+        
         // --- DOM要素の取得 ---
         const gameContainer = document.getElementById('game-container');
         const bgAnimation = document.getElementById('bg-animation');
@@ -334,16 +335,12 @@
         let timerInterval, currentCorrectAnswer = 0, isScientific = false, isFever = false;
 
         // --- Firebase初期化と認証 ---
+
+
+        
         async function initializeFirebase() {
             try {
-                const firebaseConfig = {
-                     apiKey: "AIzaSyCi8bGd1qt5QJNQKfqzWDRsgqdHZwLqdVs",
-                     authDomain: "molmaster.firebaseapp.com",
-                     projectId: "molmaster",
-                     storageBucket: "molmaster.firebasestorage.app",
-                     messagingSenderId: "8887697690",
-                     appId: "1:8887697690:web:c65855cbbc8c994ae5eca3",
-                     measurementId: "G-R2EQPP7822"}; 
+                
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
