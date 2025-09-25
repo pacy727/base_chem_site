@@ -216,8 +216,8 @@
 
                 <div id="result-buttons" class="flex flex-col space-y-2">
                     <button id="restart-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transform hover:scale-105 transition-transform">もう一度挑戦！</button>
-                    <button id="result-back-to-title-button" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform">タイトルへ戻る</button>
                 </div>
+                <button id="result-back-to-title-button" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform">タイトルへ戻る</button>
             </div>
         </main>
         
@@ -615,13 +615,27 @@
             const personalBest = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || '0');
             if (score > personalBest) localStorage.setItem(HIGH_SCORE_KEY, score);
             const worstScoreInRanking = rankingData.length < RANKING_SIZE ? 0 : rankingData[rankingData.length-1].score;
+            // if (score > 0 && score >= worstScoreInRanking) {
+            //     newHighscoreForm.classList.remove('hidden');
+            //     resultButtons.classList.add('hidden');
+            // } else {
+            //     newHighscoreForm.classList.add('hidden');
+            //     resultButtons.classList.remove('hidden');
+            // }
+
+            // 常に「タイトルへ戻る」は表示
+            document.getElementById('result-back-to-title-button').classList.remove('hidden');
+
             if (score > 0 && score >= worstScoreInRanking) {
-                newHighscoreForm.classList.remove('hidden');
-                resultButtons.classList.add('hidden');
+                // ランキング入りした場合
+                newHighscoreForm.classList.remove('hidden'); // 名前入力を表示
+                resultButtons.classList.add('hidden'); // 「もう一度挑戦」を非表示
             } else {
-                newHighscoreForm.classList.add('hidden');
-                resultButtons.classList.remove('hidden');
+                // ランキング外の場合
+                newHighscoreForm.classList.add('hidden'); // 名前入力を非表示
+                resultButtons.classList.remove('hidden'); // 「もう一度挑戦」を表示
             }
+            
             let message = '';
             if (score > 4000) message = '素晴らしい！君はもうモル・マスターじゃ！';
             else if (score > 2000) message = 'よくやった！なかなかの腕前じゃな。';
