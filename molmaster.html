@@ -442,16 +442,60 @@
         }
 
         // --- データハンドリング (Firebase) ---
+        // function loadTitleScreenData() {
+        //     const highScore = localStorage.getItem(HIGH_SCORE_KEY) || 0;
+        //     highScoreEl.textContent = highScore;
+        //     const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
+        //     const q = query(rankingCollection, orderBy("score", "desc"), limit(RANKING_SIZE));
+        //     if(unsubscribeRanking) unsubscribeRanking();
+        //     unsubscribeRanking = onSnapshot(q, (querySnapshot) => {
+        //         rankingData = [];
+        //         rankingListEl.innerHTML = '';
+        //         querySnapshot.forEach((doc) => rankingData.push(doc.data()));
+        //         if (rankingData.length > 0) {
+        //             rankingData.forEach(entry => {
+        //                 const li = document.createElement('li');
+        //                 li.textContent = `${entry.name} - ${entry.score} (${entry.correct}問)`;
+        //                 rankingListEl.appendChild(li);
+        //             });
+        //         } else {
+        //             rankingListEl.innerHTML = '<li>まだ誰もいないぞ！一番乗りを目指せ！</li>';
+        //         }
+        //     }, (error) => {
+        //         console.error("Ranking fetch failed: ", error);
+        //         rankingListEl.innerHTML = '<li>読み込み失敗</li>';
+        //     });
+        // }
+
+
         function loadTitleScreenData() {
             const highScore = localStorage.getItem(HIGH_SCORE_KEY) || 0;
             highScoreEl.textContent = highScore;
             const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
-            const q = query(rankingCollection, orderBy("score", "desc"), limit(RANKING_SIZE));
+            const q = query(rankingCollection, orderBy("score", "desc"), limit(100)); // limitを大きめに設定
             if(unsubscribeRanking) unsubscribeRanking();
             unsubscribeRanking = onSnapshot(q, (querySnapshot) => {
                 rankingData = [];
                 rankingListEl.innerHTML = '';
-                querySnapshot.forEach((doc) => rankingData.push(doc.data()));
+                
+                // 全データをまず取得
+                const allData = [];
+                querySnapshot.forEach((doc) => allData.push(doc.data()));
+                
+                // 同一ユーザー名で最高スコアのみを抽出
+                const userBestScores = new Map();
+                allData.forEach(entry => {
+                    const currentBest = userBestScores.get(entry.name);
+                    if (!currentBest || entry.score > currentBest.score) {
+                        userBestScores.set(entry.name, entry);
+                    }
+                });
+                
+                // Map から配列に変換し、スコアで降順ソート
+                rankingData = Array.from(userBestScores.values())
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, RANKING_SIZE); // トップ10のみ
+                
                 if (rankingData.length > 0) {
                     rankingData.forEach(entry => {
                         const li = document.createElement('li');
@@ -467,6 +511,7 @@
             });
         }
 
+        
         // --- ゲームロジック ---
         function initGame() {
             score = 0; timeLeft = GAME_TIME; combo = 0; warmthLevel = 0; questionCount = 0; correctCount = 0;
