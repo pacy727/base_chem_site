@@ -350,7 +350,7 @@
         // --- レベル別データプール ---
         const molValues_L1 = [0.1, 0.5, 1.0, 1.5, 2.0, 5.0, 10];
         const molValues_L2 = [0.01, 0.02, 0.03, 0.05, 0.2, 0.25, 0.3, 2.5, 3.0, 4.0];
-        const molValues_L3 = [0.04, 0.06, 0.07, 0.08, 0.09, 1.25, 0.4, 0.6, 0.7, 0.8, 0.9, 6.0, 7.0, 8.0, 9.0];
+        const molValues_L3 = [0.04, 0.08, 0.09, 1.25, 0.4, 0.6, 0.7, 0.8, 0.9, 6.0, 7.0, 8.0, 9.0];
 
         const substances_L1 = [
             { name: '水素', formula: 'H₂', molarMass: ATOMIC_MASSES.H * 2, state: 'gas' }, { name: '炭素', formula: 'C', molarMass: ATOMIC_MASSES.C, state: 'solid' },
@@ -443,32 +443,6 @@
         }
 
         // --- データハンドリング (Firebase) ---
-        // function loadTitleScreenData() {
-        //     const highScore = localStorage.getItem(HIGH_SCORE_KEY) || 0;
-        //     highScoreEl.textContent = highScore;
-        //     const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
-        //     const q = query(rankingCollection, orderBy("score", "desc"), limit(RANKING_SIZE));
-        //     if(unsubscribeRanking) unsubscribeRanking();
-        //     unsubscribeRanking = onSnapshot(q, (querySnapshot) => {
-        //         rankingData = [];
-        //         rankingListEl.innerHTML = '';
-        //         querySnapshot.forEach((doc) => rankingData.push(doc.data()));
-        //         if (rankingData.length > 0) {
-        //             rankingData.forEach(entry => {
-        //                 const li = document.createElement('li');
-        //                 li.textContent = `${entry.name} - ${entry.score} (${entry.correct}問)`;
-        //                 rankingListEl.appendChild(li);
-        //             });
-        //         } else {
-        //             rankingListEl.innerHTML = '<li>まだ誰もいないぞ！一番乗りを目指せ！</li>';
-        //         }
-        //     }, (error) => {
-        //         console.error("Ranking fetch failed: ", error);
-        //         rankingListEl.innerHTML = '<li>読み込み失敗</li>';
-        //     });
-        // }
-
-
         function loadTitleScreenData() {
             const highScore = localStorage.getItem(HIGH_SCORE_KEY) || 0;
             highScoreEl.textContent = highScore;
@@ -534,7 +508,7 @@
             isScientific = false;
             questionTextEl.innerHTML = '';
 
-            const rank = Math.floor(correctCount / 8) + 1;
+            const rank = Math.floor(correctCount / 10) + 1;
             const rand = Math.random();
 
             if (rank === 1) { // 100% L1
@@ -553,7 +527,7 @@
 
             // --- 応用問題 (20問正解以降) ---
             if (correctCount >= 20 && Math.random() < 0.3) {
-                doctorTextEl.textContent = '👨‍🔬 少し難しい問題に挑戦じゃ！';
+                // doctorTextEl.textContent = '👨‍🔬 少し難しい問題に挑戦じゃ！';
                 let complexQuestionType = Math.floor(Math.random() * 6);
                 const randomMol = molPool[Math.floor(Math.random() * molPool.length)];
 
@@ -682,6 +656,20 @@
             generateQuestion();
         }
 
+        // function handleIncorrectAnswer() {
+        //     combo = 0; timeLeft -= 5;
+        //     if(timeLeft < 0) timeLeft = 0;
+        //     warmthLevel = 0; updateBackgroundColor();
+        //     hideCombo(); updateTimer(); endFeverMode();
+        //     incorrectFlash.classList.add('flash-active');
+        //     setTimeout(() => incorrectFlash.classList.remove('flash-active'), 400);
+        //     const correctAnswerText = currentCorrectAnswer > 1e5 ? currentCorrectAnswer.toExponential(1) : currentCorrectAnswer.toPrecision(3);
+        //     doctorTextEl.textContent = `👨‍🔬 むむっ、違うぞ！答えは ${correctAnswerText} じゃった。`;
+        //     gameContainer.classList.add('feedback-incorrect');
+        //     setTimeout(() => gameContainer.classList.remove('feedback-incorrect'), 500);
+        //     if (timeLeft > 0) generateQuestion(); else endGame();
+        // }
+
         function handleIncorrectAnswer() {
             combo = 0; timeLeft -= 5;
             if(timeLeft < 0) timeLeft = 0;
@@ -689,7 +677,17 @@
             hideCombo(); updateTimer(); endFeverMode();
             incorrectFlash.classList.add('flash-active');
             setTimeout(() => incorrectFlash.classList.remove('flash-active'), 400);
-            const correctAnswerText = currentCorrectAnswer > 1e5 ? currentCorrectAnswer.toExponential(1) : currentCorrectAnswer.toPrecision(3);
+            
+            // 指数表記の場合は×10の形式で表示
+            let correctAnswerText;
+            if (currentCorrectAnswer > 1e5) {
+                const expNotation = currentCorrectAnswer.toExponential(1);
+                const [mantissa, exponent] = expNotation.split('e+');
+                correctAnswerText = `${mantissa}×10²³`.replace('23', exponent.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join(''));
+            } else {
+                correctAnswerText = currentCorrectAnswer.toPrecision(3);
+            }
+            
             doctorTextEl.textContent = `👨‍🔬 むむっ、違うぞ！答えは ${correctAnswerText} じゃった。`;
             gameContainer.classList.add('feedback-incorrect');
             setTimeout(() => gameContainer.classList.remove('feedback-incorrect'), 500);
