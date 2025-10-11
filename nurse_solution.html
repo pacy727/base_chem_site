@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[nurse solution]</title>
+    <!-- 必要なフォントとアイコンを読み込みます -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700&family=Noto+Sans+JP:wght@400;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- スタイリングのためのTailwind CSSを読み込みます -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ゲーム全体のカスタムスタイルを定義します */
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            touch-action: manipulation; /* スマートフォンでのダブルタップによるズームを無効化 */
+            transition: background-color 0.5s ease;
+        }
+        .screen {
+            display: none; /* 通常は画面を非表示 */
+        }
+        .screen.active {
+            display: flex; /* アクティブな画面のみ表示 */
+        }
+        /* デジタル風フォントのスタイル */
+        .digital-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* 指示テキスト用のカスタムフォント */
+        .instruction-font {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+        }
+        /* タイマーバーのアニメーション効果 */
+        #timer-bar-inner {
+            transition: width 1s linear, background-color 0.5s ease;
+        }
+        /* ボタンのアクションスタイル */
+        .btn-action {
+            transition: all 0.2s ease;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .btn-action:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        /* フェードイン・アウトとズームのアニメーション */
+        .fade-in-zoom { animation: fadeInZoom 0.5s ease-out forwards; }
+        .fade-out { animation: fadeOut 0.5s ease-in forwards; }
+        @keyframes fadeInZoom {
+            from { opacity: 0; transform: scale(0.5) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.8); }
+        }
+        /* 画面全体のフェードイン効果 */
+        .screen {
+            animation: screenFadeIn 0.5s ease-in-out;
+        }
+        @keyframes screenFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* 赤いフラッシュのアニメーション */
+        .red-flash-animation {
+            animation: redFlash 3s ease-out forwards;
+        }
+        @keyframes redFlash {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        #failure-text {
+             font-size: clamp(2.5rem, 8vw, 3.5rem); /* Responsive font size */
+        }
+        body.bg-red-flash {
+            animation: bgBodyRedFlash 0.8s infinite;
+        }
+        @keyframes bgBodyRedFlash {
+            0%, 100% { background-color: #F3F4F6; } /* gray-100 */
+            50% { background-color: #FECACA; } /* red-200 */
+        }
+        /* 分数表示用のスタイル */
+        .calculation-area .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            margin: 0 0.2em;
+            text-align: center;
+            font-size: 0.9em;
+            position: relative;
+            top: 0.3em;
+        }
+        .calculation-area .numerator {
+            padding: 0 0.2em;
+            border-bottom: 1.5px solid currentColor;
+        }
+        .calculation-area .denominator {
+            padding: 0 0.2em;
+        }
+        .calculation-area b {
+            color: #67e8f9; /* cyan-300 */
+        }
+        /* Remove number input spinner */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        
+        /* スライドアニメーション */
+        .slide-up-out {
+            animation: slideUpOut 0.8s ease-in-out forwards;
+        }
+        @keyframes slideUpOut {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-100%); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen p-4">
+
+    <div id="app-container" class="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden relative transition-all duration-300 ease-in-out">
+
+        <!-- スタート画面 -->
+        <div id="start-screen" class="screen active flex-col items-center justify-center p-8 text-center h-[600px]">
+            <i class="fas fa-vial-virus text-6xl text-blue-500 mb-4"></i>
+            <h1 class="text-4xl font-bold text-gray-800 mb-2 instruction-font">nurse solution</h1>
+            <p class="text-gray-600 mb-8">今日も患者を救いましょう💉</p>
+            <button id="start-button" class="btn-action bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg">
+                <i class="fas fa-play mr-2"></i>お仕事開始
+            </button>
+            <div class="mt-10 text-gray-500 w-full max-w-xs">
+                <p class="font-bold border-b pb-1 mb-2">累計成績</p>
+                <div class="flex justify-around mt-2 digital-font text-xl">
+                    <div class="flex items-center gap-2"><i class="fas fa-heart text-green-500"></i><div><span id="saved-stat">0</span> <span class="text-xs instruction-font">救った命</span></div></div>
+                    <div class="flex items-center gap-2"><i class="fas fa-skull-crossbones text-red-500"></i><div><span id="critical-stat">0</span> <span class="text-xs instruction-font">危篤にした命</span></div></div>
+                </div>
+                 <button id="reset-stats-button" class="text-xs text-gray-300 hover:text-red-400 hover:underline mt-3 focus:outline-none transition-colors">なかったことにする</button>
+            </div>
+        </div>
+
+        <!-- 患者紹介画面 -->
+        <div id="patient-screen" class="screen hidden flex-col items-center justify-center p-8 text-center h-[600px] bg-blue-50">
+            <p id="patient-number" class="text-2xl font-bold text-blue-600 mb-2 instruction-font"></p>
+            <p id="patient-icon" class="text-6xl mb-4">🧑</p>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2" id="patient-name"></h2>
+            <p class="text-xl text-gray-600" id="patient-info"></p>
+        </div>
+
+        <!-- 白い中間画面 -->
+        <div id="transition-screen" class="screen hidden flex-col items-center justify-center p-8 text-center h-[600px] bg-white">
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="game-screen" class="screen hidden flex-col h-[600px]">
+            <!-- ステータスバー -->
+            <div class="p-4 bg-gray-800 text-white flex justify-between items-center">
+                <div class="text-lg">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                    連続成功: <span id="score" class="font-bold digital-font">0</span>
+                </div>
+                <div class="w-1/2">
+                    <div id="timer-bar" class="w-full bg-gray-600 rounded-full h-4 overflow-hidden">
+                        <div id="timer-bar-inner" class="bg-yellow-400 h-4 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- バイタルモニター -->
+            <div class="p-2 bg-black text-green-400">
+                <div class="flex justify-between items-center mb-1 px-2">
+                    <span class="digital-font text-base">ECG</span>
+                    <div class="digital-font text-lg">
+                        <i class="fas fa-heart-pulse text-red-500"></i>
+                        <span id="heart-rate">75</span>
+                    </div>
+                </div>
+                <canvas id="ecg-canvas" class="w-full h-12"></canvas>
+            </div>
+
+             <!-- 問題エリア -->
+            <div id="problem-area" class="p-4 bg-gray-50 flex-grow flex flex-col justify-center items-center">
+                <div class="w-full max-w-xl bg-white p-4 rounded-lg shadow-inner text-center">
+                    <h2 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1"><i class="fas fa-file-medical"></i> 本日の業務</h2>
+                    <p id="instruction-text" class="text-xl md:text-2xl font-bold text-gray-800 instruction-font tracking-wider py-3"></p>
+                </div>
+                <div class="mt-4 text-center">
+                    <p id="query-text" class="text-md md:text-lg text-gray-700 font-semibold"></p>
+                </div>
+            </div>
+
+            <!-- 解答エリア -->
+            <div class="p-5 bg-gray-200">
+                <div id="feedback-message" class="text-center font-bold mb-3 h-6"></div>
+                <div class="grid grid-cols-3 gap-3">
+                    <!-- Number Input with Steppers -->
+                    <div class="col-span-2 flex items-center bg-gray-800 rounded-lg p-1 shadow-inner">
+                        <button id="decrement-btn" class="w-14 h-14 text-2xl font-bold text-white bg-gray-600 rounded-md hover:bg-gray-500 active:bg-gray-700 transition-colors flex-shrink-0 focus:outline-none">-</button>
+                        <div class="relative flex-grow h-full">
+                            <input type="number" step="0.01" id="answer-input" class="w-full h-full p-2 pr-20 text-2xl text-right bg-transparent text-cyan-300 border-none focus:outline-none focus:ring-0 digital-font" placeholder="0.00">
+                            <span id="unit-display" class="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 instruction-font">g</span>
+                        </div>
+                        <button id="increment-btn" class="w-14 h-14 text-2xl font-bold text-white bg-gray-600 rounded-md hover:bg-gray-500 active:bg-gray-700 transition-colors flex-shrink-0 focus:outline-none">+</button>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button id="submit-button" class="col-span-1 btn-action bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg text-xl shadow-md flex items-center justify-center instruction-font">
+                        調剤💊
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ゲームオーバー画面 -->
+        <div id="game-over-screen" class="screen hidden flex-col items-center justify-center p-4 text-center h-[600px] bg-gray-800 text-white">
+            <h1 id="game-over-title" class="text-lg font-bold my-2 text-red-400 leading-relaxed flex items-center justify-center"></h1>
+            <div class="bg-gray-700 p-3 rounded-lg my-2 w-full text-left calculation-area text-sm leading-relaxed">
+                <p id="correct-answer-text" class="text-yellow-300 whitespace-pre-line"></p>
+            </div>
+            <div class="flex items-center justify-center gap-8 w-full mt-2">
+                <div class="bg-gray-900 p-3 rounded-lg">
+                    <p class="text-md">最終スコア (救った命)</p>
+                    <p id="final-score" class="text-4xl font-bold digital-font text-green-400">0</p>
+                </div>
+                <button id="retry-button" class="btn-action bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-md shadow-lg">
+                    <i class="fas fa-redo mr-2"></i>再就職
+                </button>
+            </div>
+        </div>
+        
+        <!-- オーバーレイ -->
+        <div id="failure-overlay" class="absolute inset-0 bg-red-600 hidden items-center justify-center text-center z-50">
+            <p id="failure-text" class="text-white font-bold instruction-font animate-pulse whitespace-nowrap"></p>
+        </div>
+        <div id="success-overlay" class="absolute inset-0 bg-blue-500 hidden items-center justify-center text-center z-50 flex-col">
+            <p id="success-icon" class="text-8xl"></p>
+            <p id="success-text" class="text-white text-4xl font-bold instruction-font mt-4"></p>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmation-modal" class="absolute inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center text-center z-50 p-4">
+            <div class="bg-white rounded-lg p-8 shadow-xl fade-in-zoom">
+                <p class="text-xl font-bold text-gray-800 mb-6">ほんとうにいいの？</p>
+                <div class="flex justify-center gap-4">
+                    <button id="confirm-reset-btn" class="btn-action bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-8 rounded-full">はい</button>
+                    <button id="cancel-reset-btn" class="btn-action bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-8 rounded-full">いいえ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === DOM要素の取得 ===
+        const appContainer = document.getElementById('app-container');
+        const startScreen = document.getElementById('start-screen');
+        const patientScreen = document.getElementById('patient-screen');
+        const transitionScreen = document.getElementById('transition-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startButton = document.getElementById('start-button');
+        const retryButton = document.getElementById('retry-button');
+        const submitButton = document.getElementById('submit-button');
+        const decrementBtn = document.getElementById('decrement-btn');
+        const incrementBtn = document.getElementById('increment-btn');
+        const patientName = document.getElementById('patient-name');
+        const patientInfo = document.getElementById('patient-info');
+        const patientIcon = document.getElementById('patient-icon');
+        const patientNumber = document.getElementById('patient-number');
+        const scoreDisplay = document.getElementById('score');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const instructionText = document.getElementById('instruction-text');
+        const queryText = document.getElementById('query-text');
+        const answerInput = document.getElementById('answer-input');
+        const unitDisplay = document.getElementById('unit-display');
+        const timerBarInner = document.getElementById('timer-bar-inner');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const heartRateDisplay = document.getElementById('heart-rate');
+        const ecgCanvas = document.getElementById('ecg-canvas');
+        const correctAnswerText = document.getElementById('correct-answer-text');
+        const failureOverlay = document.getElementById('failure-overlay');
+        const failureText = document.getElementById('failure-text');
+        const successOverlay = document.getElementById('success-overlay');
+        const successIcon = document.getElementById('success-icon');
+        const successText = document.getElementById('success-text');
+        const gameOverTitle = document.getElementById('game-over-title');
+        const problemArea = document.getElementById('problem-area');
+        const resetStatsButton = document.getElementById('reset-stats-button');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmResetBtn = document.getElementById('confirm-reset-btn');
+        const cancelResetBtn = document.getElementById('cancel-reset-btn');
+        const ctx = ecgCanvas.getContext('2d');
+
+        // === ゲームの状態管理 ===
+        let score = 0;
+        let timer;
+        let timeLeft;
+        let totalTimeForRound;
+        let currentQuestion = {};
+        let isChecking = false;
+        let ecgAnimation;
+        let currentPlayer = {};
+        let gameStats = { saved: 0, critical: 0 };
+
+        // === 音声関連 ===
+        let audioCtx;
+        let flatlineOscillator;
+        let soundState = 'NORMAL'; // NORMAL, WARNING, CRITICAL
+        let beepInterval, warningInterval, criticalWarningInterval;
+        let ecgColor = '#00f0a0';
+        let ecgAmplitudeMultiplier = 1.4;
+
+
+        // === 定数データ ===
+        const solutes = [
+            { name: 'グルコース', formula: 'C₆H₁₂O₆', molarMass: 180 }, 
+            { name: '水酸化ナトリウム', formula: 'NaOH', molarMass: 40 },
+            { name: 'アンモニア', formula: 'NH₃', molarMass: 17 }, 
+            { name: '硫酸', formula: 'H₂SO₄', molarMass: 98 },
+            { name: '硝酸', formula: 'HNO₃', molarMass: 63 }, 
+            { name: '尿素', formula: 'CO(NH₂)₂', molarMass: 60 },
+            { name: 'メタノール', formula: 'CH₃OH', molarMass: 32 },
+            { name: 'エタノール', formula: 'C₂H₅OH', molarMass: 46 }, 
+            { name: '硝酸ナトリウム', formula: 'NaNO₃', molarMass: 85 }
+        ];
+        const lastNames = ['佐藤', '鈴木', '高橋', '田中', '伊藤', '渡辺', '山本', '中村', '小林', '加藤'];
+        const maleFirstNames = ['太郎', '一郎', '健太', '大輔', '蓮', '陽翔', '湊'];
+        const femaleFirstNames = ['花子', '美咲', 'さくら', '陽菜', '凛', '結衣', '莉子'];
+
+        // === イベントリスナー ===
+        startButton.addEventListener('click', startGame);
+        retryButton.addEventListener('click', () => { stopAllSounds(); showScreen('start'); });
+        submitButton.addEventListener('click', checkAnswer);
+        answerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkAnswer(); });
+        decrementBtn.addEventListener('click', () => answerInput.stepDown());
+        incrementBtn.addEventListener('click', () => answerInput.stepUp());
+        resetStatsButton.addEventListener('click', () => {
+            confirmationModal.classList.remove('hidden');
+            confirmationModal.classList.add('flex');
+        });
+        confirmResetBtn.addEventListener('click', () => {
+            resetStats();
+            confirmationModal.classList.add('hidden');
+            confirmationModal.classList.remove('flex');
+        });
+        cancelResetBtn.addEventListener('click', () => {
+            confirmationModal.classList.add('hidden');
+            confirmationModal.classList.remove('flex');
+        });
+        
+        // === 成績管理 ===
+        function loadStats() {
+            const stats = localStorage.getItem('nurseGameStats');
+            if (stats) gameStats = JSON.parse(stats);
+            updateStatsDisplay();
+        }
+        function saveStats() { localStorage.setItem('nurseGameStats', JSON.stringify(gameStats)); }
+        function updateStatsDisplay() {
+            document.getElementById('saved-stat').textContent = gameStats.saved;
+            document.getElementById('critical-stat').textContent = gameStats.critical;
+        }
+        function resetStats() {
+            gameStats = { saved: 0, critical: 0 };
+            saveStats();
+            updateStatsDisplay();
+        }
+
+        // === 音声機能 ===
+        function setupAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        
+        function playSound(freq, duration = 0.1, volume = 0.1) {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function startBeepLoop() {
+            stopBeepLoop();
+            const heartRate = parseInt(heartRateDisplay.textContent); 
+            if (!audioCtx || isNaN(heartRate) || heartRate <= 0) return;
+            playSound(976);
+            const interval = (60 / heartRate) * 1000;
+            beepInterval = setInterval(() => playSound(976), interval);
+        }
+
+        function playWarningSound() {
+            stopAllSounds();
+            soundState = 'WARNING';
+            const playDoubleBeep = () => { playSound(660); setTimeout(() => playSound(660), 150); };
+            playDoubleBeep();
+            warningInterval = setInterval(playDoubleBeep, 1000);
+        }
+        
+        function playCriticalWarningSound() {
+            stopAllSounds();
+            soundState = 'CRITICAL';
+            const playTripleBeep = () => { playSound(1318); setTimeout(() => playSound(1318), 120); setTimeout(() => playSound(1318), 240); };
+            playTripleBeep();
+            criticalWarningInterval = setInterval(playTripleBeep, 1000);
+        }
+
+        function stopBeepLoop() { clearInterval(beepInterval); }
+        function stopWarningLoop() { clearInterval(warningInterval); }
+        function stopCriticalWarningLoop() { clearInterval(criticalWarningInterval); }
+
+        function playFlatline() {
+            stopAllSounds();
+            if (!audioCtx) return;
+            flatlineOscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            flatlineOscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            flatlineOscillator.type = 'sine';
+            flatlineOscillator.frequency.setValueAtTime(976, audioCtx.currentTime);
+            const now = audioCtx.currentTime;
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.setValueAtTime(0.3, now + 4); 
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 8);
+            flatlineOscillator.start(now);
+            flatlineOscillator.stop(now + 8);
+        }
+        function stopAllSounds() {
+            stopBeepLoop();
+            stopWarningLoop();
+            stopCriticalWarningLoop();
+            if (flatlineOscillator) { flatlineOscillator.stop(); flatlineOscillator = null; }
+        }
+
+        // === 演出関連 ===
+        let ecgX = 0;
+        const ecgSpeed = 3.5;
+        const ecgWavePattern = [2, 2, 4, 8, 4, 2, -5, -15, 80, -40, 5, 2, 10, 18, 10, 2, 2];
+        let ecgPoints = [];
+        
+        function drawEcg() {
+            if (!ecgCanvas) return;
+            ecgCanvas.width = ecgCanvas.clientWidth;
+            ecgCanvas.height = ecgCanvas.clientHeight;
+            const centerY = ecgCanvas.height / 2;
+            ctx.clearRect(0, 0, ecgCanvas.width, ecgCanvas.height);
+            ctx.strokeStyle = ecgColor; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(-10, centerY);
+            for (let i = 0; i < ecgCanvas.width + 10; i++) {
+                const pointIndex = Math.floor(ecgX + i) % ecgPoints.length;
+                const yOffset = ecgPoints[pointIndex];
+                ctx.lineTo(i, centerY - yOffset * (ecgCanvas.height / 180) * ecgAmplitudeMultiplier);
+            }
+            ctx.stroke();
+            ecgX = (ecgX + ecgSpeed) % ecgPoints.length;
+            ecgAnimation = requestAnimationFrame(drawEcg);
+        }
+        function stopEcg() { 
+            cancelAnimationFrame(ecgAnimation);
+            ctx.clearRect(0, 0, ecgCanvas.width, ecgCanvas.height);
+            const centerY = ecgCanvas.height / 2;
+            ctx.strokeStyle = ecgColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(ecgCanvas.width, centerY);
+            ctx.stroke();
+        }
+        
+        // === ゲームフロー ===
+        function startGame() {
+            stopAllSounds();
+            setupAudio(); score = 0; updateScore(); prepareNextRound();
+        }
+        function prepareNextRound() {
+            generateAndShowPatient();
+            setTimeout(() => { showScreen('game'); nextQuestion(); }, 2500);
+        }
+        function generateAndShowPatient() {
+            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+            const gender = Math.random() > 0.5 ? '男性' : '女性';
+            const firstName = gender === '男性' ? maleFirstNames[Math.floor(Math.random() * maleFirstNames.length)] : femaleFirstNames[Math.floor(Math.random() * femaleFirstNames.length)];
+            const age = Math.floor(Math.random() * 86);
+            currentPlayer = { name: `${lastName} ${firstName}`, age: age, gender: gender };
+            if (age >= 80) totalTimeForRound = 60;
+            else if (age <= 10 || (age >= 60 && age < 80)) totalTimeForRound = 80;
+            else totalTimeForRound = 100;
+            let icon = '🧑';
+            if (age <= 1) icon = '👶';
+            else if (gender === '男性') {
+                if (age < 13) icon = '👦'; else if (age < 40) icon = '🧑';
+                else if (age < 60) icon = '👨'; else icon = '👨‍🦳';
+            } else {
+                if (age < 13) icon = '👧'; else if (age < 40) icon = '👩';
+                else if (age < 60) icon = '👩‍🦰'; else icon = '👵';
+            }
+            patientNumber.textContent = `${score + 1}人目`;
+            patientIcon.textContent = icon;
+            patientName.textContent = `${currentPlayer.name} さん`;
+            patientInfo.textContent = `${currentPlayer.age}歳 ${gender}`;
+            showScreen('patient');
+        }
+        function nextQuestion() {
+            isChecking = false; clearTimeout(timer); timeLeft = totalTimeForRound;
+            soundState = 'NORMAL';
+            updateTimerDisplay(); currentQuestion = generateQuestion();
+            instructionText.textContent = currentQuestion.instruction;
+            queryText.textContent = currentQuestion.query;
+            unitDisplay.textContent = currentQuestion.unit;
+            answerInput.value = ''; answerInput.placeholder = currentQuestion.placeholder;
+            answerInput.disabled = false; answerInput.focus();
+            feedbackMessage.textContent = '';
+            document.body.classList.remove('bg-red-flash');
+
+            if (currentQuestion.unit === 'mL') {
+                submitButton.innerHTML = `完了💉`;
+            } else {
+                submitButton.innerHTML = `完了💊`;
+            }
+            
+            cancelAnimationFrame(ecgAnimation); drawEcg();
+            
+            timer = setInterval(() => {
+                timeLeft--; 
+                updateTimerDisplay();
+                if (timeLeft <= 10 && soundState !== 'CRITICAL') {
+                    playCriticalWarningSound();
+                } else if (timeLeft <= 30 && soundState === 'NORMAL') {
+                    playWarningSound();
+                }
+
+                if (timeLeft <= 0) { 
+                    gameOver('時間切れ...');
+                }
+            }, 1000);
+             startBeepLoop();
+        }
+        function checkAnswer() {
+            if (isChecking) return;
+            isChecking = true; answerInput.disabled = true;
+            const userAnswer = parseFloat(answerInput.value);
+            if (isNaN(userAnswer)) {
+                showFeedback('数値を入力してください！', 'error');
+                isChecking = false; answerInput.disabled = false; return;
+            }
+            const tolerance = Math.max(0.01, currentQuestion.answer * 0.01);
+            if (Math.abs(userAnswer - currentQuestion.answer) <= tolerance) {
+                score++; gameStats.saved++; saveStats(); updateScore(); clearTimeout(timer); stopAllSounds();
+                successIcon.textContent = patientIcon.textContent;
+                successText.textContent = 'ありがとうございます！';
+                
+                // 白い画面を先に表示開始
+                showScreen('transition');
+                
+                // 成功オーバーレイを表示
+                successOverlay.classList.remove('hidden');
+                successOverlay.classList.add('flex', 'fade-in-zoom');
+                
+                setTimeout(() => {
+                    successOverlay.classList.add('slide-up-out');
+                    successOverlay.classList.remove('fade-in-zoom');
+                }, 1500);
+                setTimeout(() => {
+                    successOverlay.classList.add('hidden');
+                    successOverlay.classList.remove('slide-up-out');
+                }, 2000);
+                setTimeout(() => {
+                    prepareNextRound();
+                }, 2300);
+            } else {
+                gameOver(`計算ミス！`);
+            }
+        }
+        function gameOver(reason) {
+            clearTimeout(timer); playFlatline();
+            gameStats.critical++; saveStats();
+            heartRateDisplay.textContent = '0';
+            document.body.classList.remove('bg-red-flash');
+            stopEcg();
+            failureText.textContent = '何をやっておる！！';
+            failureOverlay.classList.remove('hidden');
+            failureOverlay.classList.add('flex', 'red-flash-animation');
+            setTimeout(() => {
+                failureOverlay.classList.add('hidden');
+                failureOverlay.classList.remove('flex', 'red-flash-animation');
+                gameOverTitle.innerHTML = `<i class="fas fa-briefcase-medical text-yellow-400 mr-3"></i> ${currentPlayer.name}さん (${currentPlayer.age}歳) が医療ミスにより一時危篤状態となった。`;
+                correctAnswerText.innerHTML = `<span class="font-bold text-base">【問題】</span><br>${currentQuestion.instruction}<br><br><span class="font-bold text-base">【計算手順】</span><br>${currentQuestion.calculation}<br><br>「正解は ${currentQuestion.answer}${currentQuestion.unit} じゃないか・・・ なんということじゃ」`;
+                finalScoreDisplay.textContent = score;
+                showScreen('game-over');
+            }, 3000);
+        }
+
+        // === UI更新 ===
+        function updateTimerDisplay() {
+            const percentage = (timeLeft / totalTimeForRound) * 100;
+            timerBarInner.style.width = `${percentage}%`;
+            if (percentage < 25) timerBarInner.style.backgroundColor = '#ef4444';
+            else if (percentage < 50) timerBarInner.style.backgroundColor = '#f59e0b';
+            else timerBarInner.style.backgroundColor = '#facc15';
+            
+            // バイタルを秒数とリンク
+            const visualBPM = timeLeft > 0 ? timeLeft : 0;
+            heartRateDisplay.textContent = visualBPM;
+            
+            const baseSpacing = 50;
+            const maxSpacing = 250;
+            const remainingRatio = timeLeft / totalTimeForRound;
+            const spacing = Math.round(baseSpacing + (maxSpacing - baseSpacing) * (1 - remainingRatio));
+            ecgPoints = [...ecgWavePattern, ...Array(spacing).fill(2)];
+
+            if (timeLeft <= 10) {
+                ecgColor = '#ef4444';
+                ecgAmplitudeMultiplier = 1.0;
+            } else if (timeLeft <= 30) {
+                ecgColor = '#facc15';
+                ecgAmplitudeMultiplier = 1.2;
+            } else {
+                ecgColor = '#00f0a0';
+                ecgAmplitudeMultiplier = 1.4;
+            }
+
+            if (timeLeft <= 10 && timeLeft > 0) document.body.classList.add('bg-red-flash');
+            else document.body.classList.remove('bg-red-flash');
+            
+            if (soundState === 'NORMAL' && timeLeft > 0) {
+                stopBeepLoop();
+                startBeepLoop();
+            } else if (timeLeft <= 0) {
+                stopAllSounds();
+            }
+        }
+        function updateScore() { scoreDisplay.textContent = score; }
+        function showFeedback(message, type) {
+            feedbackMessage.textContent = message;
+            feedbackMessage.className = 'text-center font-bold mb-3 h-6 fade-in';
+            feedbackMessage.classList.add(type === 'success' ? 'text-green-600' : 'text-red-600');
+        }
+        function showScreen(screenId) {
+            [startScreen, patientScreen, transitionScreen, gameScreen, gameOverScreen].forEach(screen => {
+                screen.classList.remove('active'); screen.classList.add('hidden');
+            });
+
+            if(screenId === 'start') updateStatsDisplay();
+            document.getElementById(screenId + '-screen').classList.remove('hidden');
+            document.getElementById(screenId + '-screen').classList.add('active');
+        }
+
+        // === 問題生成 ===
+        function createFraction(numerator, denominator) { return `<div class="fraction"><span class="numerator">${numerator}</span><span class="denominator">${denominator}</span></div>`; }
+        
+        function generateQuestion() {
+            // ケース4と5をそれぞれ10%の確率で出題
+            const rand = Math.random();
+            let type;
+            if (rand < 0.10) {
+                type = 4; // 希釈問題 10%
+            } else if (rand < 0.20) {
+                type = 5; // %とmol/L変換 10%
+            } else {
+                type = Math.floor(Math.random() * 4); // ケース0-3を80%
+            }
+            
+            const solute = solutes[Math.floor(Math.random() * solutes.length)];
+            
+            // 割り切れる値を生成するための候補
+            const validMolarities = [0.1, 0.2, 0.25, 0.5, 1.0, 1.5, 2.0];
+            const validVolumes = [10, 20, 25, 50, 100, 200, 250, 500];
+            
+            let molarity, volume, mass, moles;
+            let instruction = '', query = '', answer = 0, unit = '', placeholder = '', calculation = '';
+            let volumeL;
+
+            switch (type) {
+                case 0:
+                    molarity = validMolarities[Math.floor(Math.random() * validMolarities.length)];
+                    volume = validVolumes[Math.floor(Math.random() * validVolumes.length)];
+                    volumeL = volume / 1000;
+                    moles = parseFloat((molarity * volumeL).toPrecision(3));
+                    mass = parseFloat((moles * solute.molarMass).toPrecision(3));
+                    
+                    instruction = `${solute.formula} ${molarity}mol/L を ${volume}mL 調剤`;
+                    query = `必要な ${solute.formula} は... (${solute.formula}=${solute.molarMass})`;
+                    answer = mass; unit = 'g'; placeholder = 'グラム数を入力';
+                    calculation = `<b>手順1: 物質量(mol)を求める</b><br>` +
+                                  `物質量 = 濃度 × 体積 = ${molarity} mol/L × ${volumeL} L = <b>${moles} mol</b><br><br>` +
+                                  `<b>手順2: 質量(g)を求める</b><br>` +
+                                  `質量 = 物質量 × モル質量 = ${moles} mol × ${solute.molarMass} g/mol = <b>${mass} g</b>`;
+                    break;
+                case 1:
+                    // モル濃度(mol/L)を問う問題 - molが割り切れるように設定
+                    volume = validVolumes[Math.floor(Math.random() * validVolumes.length)];
+                    volumeL = volume / 1000;
+                    
+                    // molが割り切れる質量を生成
+                    const validMolesCase1 = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0];
+                    moles = validMolesCase1[Math.floor(Math.random() * validMolesCase1.length)];
+                    mass = parseFloat((moles * solute.molarMass).toPrecision(3));
+                    
+                    // モル濃度を計算
+                    molarity = parseFloat((moles / volumeL).toPrecision(3));
+                    
+                    instruction = `${mass}gの${solute.formula}を${volume}mLに溶かし調剤`;
+                    query = `この水溶液のモル濃度は... (${solute.formula}=${solute.molarMass})`;
+                    answer = molarity; unit = 'mol/L'; placeholder = 'モル濃度を入力';
+                    calculation = `<b>手順1: 物質量(mol)を求める</b><br>` +
+                                  `物質量 = ${createFraction('質量', 'モル質量')} = ${createFraction(mass + ' g', solute.molarMass + ' g/mol')} = <b>${moles} mol</b><br><br>` +
+                                  `<b>手順2: モル濃度(mol/L)を求める</b><br>` +
+                                  `濃度 = ${createFraction('物質量', '体積(L)')} = ${createFraction(moles + ' mol', volumeL + ' L')} = <b>${molarity} mol/L</b>`;
+                    break;
+                case 2:
+                    // 体積(mL)を問う問題 - molが割り切れるように設定
+                    molarity = validMolarities[Math.floor(Math.random() * validMolarities.length)];
+                    
+                    // molが割り切れる質量を生成
+                    const validMoles = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0];
+                    moles = validMoles[Math.floor(Math.random() * validMoles.length)];
+                    mass = parseFloat((moles * solute.molarMass).toPrecision(3));
+                    
+                    // 体積を計算
+                    volumeL = parseFloat((moles / molarity).toPrecision(3));
+                    volume = parseFloat((volumeL * 1000).toPrecision(3));
+                    
+                    instruction = `${molarity}mol/L ${solute.formula}液で ${mass}g 血中投与`;
+                    query = `必要な液量は... (${solute.formula}=${solute.molarMass})`;
+                    answer = volume; unit = 'mL'; placeholder = '体積(mL)を入力';
+                    calculation = `<b>手順1: 必要な物質量(mol)を求める</b><br>` +
+                                  `物質量 = ${createFraction('質量', 'モル質量')} = ${createFraction(mass + ' g', solute.molarMass + ' g/mol')} = <b>${moles} mol</b><br><br>` +
+                                  `<b>手順2: 体積(L)を求める</b><br>`+
+                                  `体積(L) = ${createFraction('物質量', '濃度')} = ${createFraction(moles + ' mol', molarity + ' mol/L')} = <b>${volumeL} L</b><br><br>` +
+                                  `<b>手順3: 体積(mL)に変換する</b><br>` +
+                                  `${volumeL} L × 1000 = <b>${volume} mL</b>`;
+                    break;
+                case 3:
+                    molarity = validMolarities[Math.floor(Math.random() * validMolarities.length)];
+                    volume = validVolumes[Math.floor(Math.random() * validVolumes.length)];
+                    volumeL = volume / 1000;
+                    moles = parseFloat((molarity * volumeL).toPrecision(3));
+                    
+                    instruction = `${molarity}mol/L ${solute.formula}液 ${volume}mL を調剤`;
+                    query = `必要な溶質の物質量は...`;
+                    answer = moles; unit = 'mol'; placeholder = '物質量を入力';
+                    calculation = `<b>手順1: 物質量(mol)を求める</b><br>` +
+                                  `物質量 = 濃度 × 体積 = ${molarity} mol/L × ${volumeL} L = <b>${moles} mol</b>`;
+                    break;
+                case 4:
+                    const concentratedMolarities = [6, 10, 12, 15, 18];
+                    const dilutedMolarities = [0.5, 1.0, 1.5, 2.0];
+                    const dilutedVolumes = [100, 150, 200, 250, 300, 500];
+                    const concentratedVolumes = [10, 20, 25, 50, 100];
+                    
+                    // 3パターンの問題をランダムに選択
+                    const dilutionType = Math.floor(Math.random() * 3);
+                    
+                    if (dilutionType === 0) {
+                        // ①原液の体積を求める問題（元のパターン）
+                        const concentratedMolarity = concentratedMolarities[Math.floor(Math.random() * concentratedMolarities.length)];
+                        const dilutedMolarity = dilutedMolarities[Math.floor(Math.random() * dilutedMolarities.length)];
+                        const dilutedVolume = dilutedVolumes[Math.floor(Math.random() * dilutedVolumes.length)];
+                        const neededConcentratedVolume = parseFloat((dilutedMolarity * dilutedVolume / concentratedMolarity).toPrecision(3));
+                        
+                        instruction = `${concentratedMolarity}mol/L ${solute.formula}原液を希釈`;
+                        query = `${dilutedMolarity}mol/Lを${dilutedVolume}mL作るには原液が何mL必要？`;
+                        answer = neededConcentratedVolume; unit = 'mL'; placeholder = '体積(mL)を入力';
+                        calculation = `<b>希釈の公式: C₁V₁ = C₂V₂</b><br>` +
+                                      `C₁: 原液の濃度 = ${concentratedMolarity} mol/L<br>` +
+                                      `V₁: 原液の体積 = ?<br>` +
+                                      `C₂: 希釈液の濃度 = ${dilutedMolarity} mol/L<br>` +
+                                      `V₂: 希釈液の体積 = ${dilutedVolume} mL<br><br>` +
+                                      `<b>計算:</b><br>` +
+                                      `V₁ = ${createFraction('C₂ × V₂', 'C₁')} = ${createFraction(dilutedMolarity + ' × ' + dilutedVolume, concentratedMolarity)} = <b>${neededConcentratedVolume} mL</b>`;
+                    } else if (dilutionType === 1) {
+                        // ②希釈液の濃度を求める問題
+                        const concentratedMolarity = concentratedMolarities[Math.floor(Math.random() * concentratedMolarities.length)];
+                        const concentratedVolume = concentratedVolumes[Math.floor(Math.random() * concentratedVolumes.length)];
+                        const dilutedVolume = dilutedVolumes[Math.floor(Math.random() * dilutedVolumes.length)];
+                        const resultDilutedMolarity = parseFloat((concentratedMolarity * concentratedVolume / dilutedVolume).toPrecision(3));
+                        
+                        instruction = `${concentratedMolarity}mol/L ${solute.formula}原液${concentratedVolume}mLを希釈`;
+                        query = `全体を${dilutedVolume}mLにすると希釈液の濃度は？`;
+                        answer = resultDilutedMolarity; unit = 'mol/L'; placeholder = 'モル濃度を入力';
+                        calculation = `<b>希釈の公式: C₁V₁ = C₂V₂</b><br>` +
+                                      `C₁: 原液の濃度 = ${concentratedMolarity} mol/L<br>` +
+                                      `V₁: 原液の体積 = ${concentratedVolume} mL<br>` +
+                                      `C₂: 希釈液の濃度 = ?<br>` +
+                                      `V₂: 希釈液の体積 = ${dilutedVolume} mL<br><br>` +
+                                      `<b>計算:</b><br>` +
+                                      `C₂ = ${createFraction('C₁ × V₁', 'V₂')} = ${createFraction(concentratedMolarity + ' × ' + concentratedVolume, dilutedVolume)} = <b>${resultDilutedMolarity} mol/L</b>`;
+                    } else {
+                        // ③希釈液の体積を求める問題
+                        const concentratedMolarity = concentratedMolarities[Math.floor(Math.random() * concentratedMolarities.length)];
+                        const concentratedVolume = concentratedVolumes[Math.floor(Math.random() * concentratedVolumes.length)];
+                        const dilutedMolarity = dilutedMolarities[Math.floor(Math.random() * dilutedMolarities.length)];
+                        const resultDilutedVolume = parseFloat((concentratedMolarity * concentratedVolume / dilutedMolarity).toPrecision(3));
+                        
+                        instruction = `${concentratedMolarity}mol/L ${solute.formula}原液${concentratedVolume}mLを希釈`;
+                        query = `${dilutedMolarity}mol/Lにするには全体を何mLにすべき？`;
+                        answer = resultDilutedVolume; unit = 'mL'; placeholder = '体積(mL)を入力';
+                        calculation = `<b>希釈の公式: C₁V₁ = C₂V₂</b><br>` +
+                                      `C₁: 原液の濃度 = ${concentratedMolarity} mol/L<br>` +
+                                      `V₁: 原液の体積 = ${concentratedVolume} mL<br>` +
+                                      `C₂: 希釈液の濃度 = ${dilutedMolarity} mol/L<br>` +
+                                      `V₂: 希釈液の体積 = ?<br><br>` +
+                                      `<b>計算:</b><br>` +
+                                      `V₂ = ${createFraction('C₁ × V₁', 'C₂')} = ${createFraction(concentratedMolarity + ' × ' + concentratedVolume, dilutedMolarity)} = <b>${resultDilutedVolume} mL</b>`;
+                    }
+                    break;
+                case 5:
+                    // 固定データセット（%とmol/Lが整数値、密度は現実的な値）
+                    const concentrationData = [
+                        // 硫酸
+                        {name: '硫酸', formula: 'H₂SO₄', molarMass: 98, percent: 49, density: 1.4, molarity: 7},
+                        {name: '硫酸', formula: 'H₂SO₄', molarMass: 98, percent: 98, density: 1.84, molarity: 18},
+                        // 塩酸
+                        {name: '塩酸', formula: 'HCl', molarMass: 36.5, percent: 36.5, density: 1.2, molarity: 12},
+                        // 硝酸
+                        {name: '硝酸', formula: 'HNO₃', molarMass: 63, percent: 30, density: 1.26, molarity: 6},
+                        {name: '硝酸', formula: 'HNO₃', molarMass: 63, percent: 45, density: 1.4, molarity: 10},
+                        {name: '硝酸', formula: 'HNO₃', molarMass: 63, percent: 63, density: 1.4, molarity: 14},
+                        // 水酸化ナトリウム
+                        {name: '水酸化ナトリウム', formula: 'NaOH', molarMass: 40, percent: 20, density: 1.2, molarity: 6},
+                        {name: '水酸化ナトリウム', formula: 'NaOH', molarMass: 40, percent: 30, density: 1.2, molarity: 9},
+                        {name: '水酸化ナトリウム', formula: 'NaOH', molarMass: 40, percent: 40, density: 1.4, molarity: 14},
+                        {name: '水酸化ナトリウム', formula: 'NaOH', molarMass: 40, percent: 50, density: 1.6, molarity: 20},
+                        // アンモニア
+                        {name: 'アンモニア', formula: 'NH₃', molarMass: 17, percent: 34, density: 0.9, molarity: 18},
+                        {name: 'アンモニア', formula: 'NH₃', molarMass: 17, percent: 51, density: 0.8, molarity: 24},
+                        // 酢酸
+                        {name: '酢酸', formula: 'CH₃COOH', molarMass: 60, percent: 60, density: 1.1, molarity: 11},
+                        {name: '酢酸', formula: 'CH₃COOH', molarMass: 60, percent: 100, density: 1.2, molarity: 20},
+                        // 過酸化水素
+                        {name: '過酸化水素', formula: 'H₂O₂', molarMass: 34, percent: 17, density: 1.0, molarity: 5},
+                        {name: '過酸化水素', formula: 'H₂O₂', molarMass: 34, percent: 34, density: 1.1, molarity: 11},
+                        // エタノール
+                        {name: 'エタノール', formula: 'C₂H₅OH', molarMass: 46, percent: 46, density: 0.9, molarity: 9},
+                        {name: 'エタノール', formula: 'C₂H₅OH', molarMass: 46, percent: 92, density: 0.8, molarity: 16},
+                        // メタノール
+                        {name: 'メタノール', formula: 'CH₃OH', molarMass: 32, percent: 32, density: 0.9, molarity: 9},
+                        {name: 'メタノール', formula: 'CH₃OH', molarMass: 32, percent: 64, density: 0.8, molarity: 16},
+                        // グルコース溶液
+                        {name: 'グルコース', formula: 'C₆H₁₂O₆', molarMass: 180, percent: 18, density: 1.1, molarity: 1.1},
+                        {name: 'グルコース', formula: 'C₆H₁₂O₆', molarMass: 180, percent: 36, density: 1.2, molarity: 2.4},
+                        {name: 'グルコース', formula: 'C₆H₁₂O₆', molarMass: 180, percent: 54, density: 1.2, molarity: 3.6},
+                        // 尿素溶液
+                        {name: '尿素', formula: 'CO(NH₂)₂', molarMass: 60, percent: 30, density: 1.1, molarity: 5.5},
+                        {name: '尿素', formula: 'CO(NH₂)₂', molarMass: 60, percent: 60, density: 1.1, molarity: 11}
+                    ];
+                    
+                    const selectedData = concentrationData[Math.floor(Math.random() * concentrationData.length)];
+                    const questionType = Math.random() > 0.5 ? 'percent_to_molarity' : 'molarity_to_percent';
+                    
+                    if (questionType === 'percent_to_molarity') {
+                        instruction = `${selectedData.percent}% ${selectedData.formula}溶液 (密度${selectedData.density}g/cm³)`;
+                        query = `このモル濃度は... (${selectedData.formula}=${selectedData.molarMass})`;
+                        answer = selectedData.molarity; unit = 'mol/L'; placeholder = 'モル濃度を入力';
+                        const massIn1L = parseFloat((selectedData.density * 1000 * selectedData.percent / 100).toPrecision(4));
+                        const molesIn1L = parseFloat((massIn1L / selectedData.molarMass).toPrecision(3));
+                        calculation = `<b>手順1: 1L中の溶質の質量を求める</b><br>` +
+                                      `1L = 1000cm³ なので質量 = ${selectedData.density} g/cm³ × 1000cm³ = ${selectedData.density * 1000} g<br>` +
+                                      `溶質の質量 = ${selectedData.density * 1000} g × ${createFraction(selectedData.percent, '100')} = <b>${massIn1L} g</b><br><br>` +
+                                      `<b>手順2: 物質量(mol)を求める</b><br>` +
+                                      `物質量 = ${createFraction('質量', 'モル質量')} = ${createFraction(massIn1L + ' g', selectedData.molarMass + ' g/mol')} = <b>${molesIn1L} mol</b><br><br>` +
+                                      `<b>手順3: モル濃度を求める</b><br>` +
+                                      `濃度 = ${createFraction('物質量', '体積(L)')} = ${createFraction(molesIn1L + ' mol', '1 L')} = <b>${selectedData.molarity} mol/L</b>`;
+                    } else {
+                        instruction = `${selectedData.molarity}mol/L ${selectedData.formula}溶液 (密度${selectedData.density}g/cm³)`;
+                        query = `この質量パーセント濃度は... (${selectedData.formula}=${selectedData.molarMass})`;
+                        answer = selectedData.percent; unit = '%'; placeholder = 'パーセント濃度を入力';
+                        const molesIn1L = selectedData.molarity;
+                        const massOfSolute = parseFloat((molesIn1L * selectedData.molarMass).toPrecision(4));
+                        const totalMass = selectedData.density * 1000;
+                        calculation = `<b>手順1: 1L中の溶質の質量を求める</b><br>` +
+                                      `物質量 = ${molesIn1L} mol<br>` +
+                                      `溶質の質量 = ${molesIn1L} mol × ${selectedData.molarMass} g/mol = <b>${massOfSolute} g</b><br><br>` +
+                                      `<b>手順2: 1L溶液の全質量を求める</b><br>` +
+                                      `全質量 = 密度 × 体積 = ${selectedData.density} g/cm³ × 1000cm³ = <b>${totalMass} g</b><br><br>` +
+                                      `<b>手順3: 質量パーセント濃度を求める</b><br>` +
+                                      `質量% = ${createFraction('溶質の質量', '溶液の質量')} × 100 = ${createFraction(massOfSolute + ' g', totalMass + ' g')} × 100 = <b>${selectedData.percent}%</b>`;
+                    }
+                    break;
+            }
+            return { instruction, query, answer: parseFloat(answer.toPrecision(3)), unit, placeholder, calculation };
+        }
+        loadStats();
+        showScreen('start');
+    </script>
+</body>
+</html>
