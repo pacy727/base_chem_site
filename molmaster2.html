@@ -1027,6 +1027,42 @@
             if (timeLeft <= 0) endGame();
         }
 
+        // --- ヒント・解説機能 ---
+        function showHint() {
+            const data = currentQuestionData;
+            let hintHTML = '<div class="space-y-3">';
+            
+            hintHTML += `<div class="bg-blue-50 p-3 rounded-lg">`;
+            hintHTML += `<p class="font-bold text-blue-800 mb-2">📌 基本情報</p>`;
+            hintHTML += `<p class="text-sm">・物質: ${data.substance.name}(${data.substance.formula})</p>`;
+            hintHTML += `<p class="text-sm">・分子量: ${data.substance.molarMass.toFixed(1)} g/mol</p>`;
+            hintHTML += `</div>`;
+            
+            hintHTML += `<div class="bg-yellow-50 p-3 rounded-lg">`;
+            hintHTML += `<p class="font-bold text-yellow-800 mb-2">💡 考え方のヒント</p>`;
+            
+            if (data.questionType.includes('mol_to_g') || data.questionType.includes('g_to_mol')) {
+                hintHTML += `<p class="text-sm mb-2">1 mol = ${data.substance.molarMass.toFixed(1)} g じゃ</p>`;
+                hintHTML += `<p class="text-sm">${data.givenValue} ${data.givenUnit} は何${data.answerUnit}かな？</p>`;
+            } else if (data.questionType.includes('mol_to_L') || data.questionType.includes('L_to_mol')) {
+                hintHTML += `<p class="text-sm mb-2">気体 1 mol = 22.4 L（標準状態）じゃ</p>`;
+                hintHTML += `<p class="text-sm">${data.givenValue} ${data.givenUnit} は何${data.answerUnit}かな？</p>`;
+            } else if (data.questionType.includes('particles')) {
+                hintHTML += `<p class="text-sm mb-2">1 mol = 6.0×10²³ 個 じゃ</p>`;
+                hintHTML += `<p class="text-sm">これを使って考えてみるのじゃ！</p>`;
+            } else if (data.questionType.includes('g_to_L') || data.questionType.includes('L_to_g')) {
+                hintHTML += `<p class="text-sm mb-2">まずmolに変換するのじゃ！</p>`;
+                hintHTML += `<p class="text-sm">1 mol = ${data.substance.molarMass.toFixed(1)} g</p>`;
+                hintHTML += `<p class="text-sm">1 mol = 22.4 L（標準状態）</p>`;
+            }
+            
+            hintHTML += `</div>`;
+            hintHTML += '</div>';
+            
+            hintContent.innerHTML = hintHTML;
+            hintPanel.classList.add('active');
+        }
+
         function showExplanation() {
             const data = currentQuestionData;
             let explanationHTML = '<div class="space-y-3">';
