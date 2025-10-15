@@ -150,16 +150,17 @@
             pointer-events: none;
             transition: opacity 0.3s ease;
             z-index: 50;
+            font-family: 'Courier New', Courier, monospace;
         }
         .side-panel.active {
             opacity: 1;
             pointer-events: all;
         }
         #hint-panel {
-            left: calc(50% - 224px - 420px);  /* メインパネル幅の半分 + サイドパネル幅 */
+            left: calc(50% - 224px - 310px);  /* メインパネル幅の半分 + サイドパネル幅 */
         }
         #explanation-panel {
-            right: calc(50% - 224px - 420px);
+            right: calc(50% - 224px - 430px);
         }
 
         /* 博士の講義モード用の背景アニメーション */
@@ -1194,8 +1195,8 @@
             
             explanationHTML += `<div class="bg-purple-50 p-3 rounded-lg">`;
             explanationHTML += `<p class="font-bold text-purple-800 mb-2">🎯 ポイント</p>`;
-            explanationHTML += `<p class="text-sm">比の計算を使えば、カンタンじゃ！</p>`;
-            explanationHTML += `<p class="text-sm mt-1">「1 molが何g、何L、何個か」を覚えて、比の式を作ろう！</p>`;
+            explanationHTML += `<p class="text-sm">比の計算を使えば、中学生でも解ける！</p>`;
+            explanationHTML += `<p class="text-sm mt-1">「1 molが何g（または何L、何個）か」を覚えて、比の式を作ろう！</p>`;
             explanationHTML += `</div>`;
             
             explanationHTML += '</div>';
