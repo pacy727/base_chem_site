@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>モル・マスターへの道</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* --- アニメーション & エフェクト --- */
+        #bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-size: 400% 400%;
+            animation: gradient-bg 15s ease infinite;
+            transition: background-image 1s ease-in-out;
+        }
+
+        @keyframes gradient-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .fever-mode {
+            animation: fever-pulse 0.7s infinite;
+        }
+        @keyframes fever-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7); }
+            70% { box-shadow: 0 0 20px 30px rgba(255, 165, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+        }
+
+        .feedback-correct { animation: feedback-correct-anim 0.5s ease; }
+        @keyframes feedback-correct-anim {
+            0% { transform: scale(1); box-shadow: 0 0 15px rgba(255, 255, 255, 0); }
+            50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 15px rgba(255, 255, 255, 0); }
+        }
+        .feedback-incorrect { animation: feedback-incorrect-anim 0.5s ease; }
+        @keyframes feedback-incorrect-anim {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+            20%, 40%, 60%, 80% { transform: translateX(6px); }
+        }
+        
+        #incorrect-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .flash-active {
+            animation: flash-anim 0.4s ease-out;
+        }
+        @keyframes flash-anim {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            animation: burst 1.5s ease-out forwards;
+        }
+        @keyframes burst {
+            0% {
+                transform: translate(var(--start-x), var(--start-y)) rotate3d(1, 1, 1, 0deg) scale(1);
+                opacity: 1;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--end-x), var(--end-y)) rotate3d(var(--rot-x), var(--rot-y), var(--rot-z), 720deg) scale(0);
+                opacity: 0;
+            }
+                       
+        }
+        /* ポップアップスタイル */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .popup-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .popup-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+        .popup-overlay.active .popup-content {
+            transform: scale(1);
+        }
+
+        /* 講義モード用のサイドパネル */
+        .side-panel {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 280px;
+            max-height: 70vh;
+            overflow-y: auto;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 50;
+        }
+        .side-panel.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        #hint-panel {
+            left: 20px;
+        }
+        #explanation-panel {
+            right: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .side-panel {
+                position: relative;
+                top: auto;
+                transform: none;
+                max-width: 100%;
+                margin: 10px auto;
+                left: 0 !important;
+                right: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div id="bg-animation"></div>
+    <div id="incorrect-flash"></div>
+    
+    <!-- ルール説明ポップアップ -->
+    <div id="rules-popup" class="popup-overlay">
+        <div class="popup-content">
+            <h3 class="font-bold text-center mb-4 text-xl text-blue-800">【ゲーム説明】</h3>
+            <div class="text-sm text-gray-700 space-y-2">
+                <p>・制限時間は<span class="font-bold text-red-500">60秒</span>！</p>
+                <p>・正解で<span class="font-bold text-green-500">スコアUP</span>＆残り時間<span class="font-bold text-blue-500">+3秒</span>！</p>
+                <p>・不正解だと残り時間<span class="font-bold text-red-600">-5秒</span>！</p>
+                <p>・連続正解で<span class="font-bold text-orange-500">コンボ</span>！スコアがどんどん増えるぞ！</p>
+                <p>・5連続正解で<span class="font-bold text-yellow-500">フィーバータイム</span>！スコア3倍！</p>
+                <p>・正解数が増えると問題の<span class="font-bold text-purple-500">難易度アップ</span>！</p>
+            </div>
+            <button id="close-rules-button" class="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">閉じる</button>
+        </div>
+    </div>
+
+    <!-- ヒントパネル（講義モード用） -->
+    <div id="hint-panel" class="side-panel">
+        <h3 class="font-bold text-lg text-blue-700 mb-3 text-center">💡 ヒント</h3>
+        <div id="hint-content" class="text-sm text-gray-700 space-y-2"></div>
+    </div>
+
+    <!-- 解説パネル（講義モード用） -->
+    <div id="explanation-panel" class="side-panel">
+        <h3 class="font-bold text-lg text-green-700 mb-3 text-center">📚 解答解説</h3>
+        <div id="explanation-content" class="text-sm text-gray-700 space-y-2"></div>
+    </div>
+
+    <div id="game-container" class="w-full max-w-md mx-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-8 transform transition-all relative">
+        
+        <header class="flex items-center justify-center mb-4 relative h-10">
+            <button id="back-to-title-button" class="hidden absolute top-1/2 -translate-y-1/2 left-0 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded-lg text-sm transition-all">&lt; タイトルへ</button>
+            <h1 class="text-3xl font-extrabold text-blue-700">モル・マスターへの道</h1>
+        </header>
+
+        <div id="status-bar" class="hidden justify-between items-center mb-4 bg-gray-50/80 p-3 rounded-lg">
+            <div class="text-center">
+                <span class="text-xs text-gray-500">SCORE</span>
+                <p id="score" class="font-orbitron text-xl font-bold text-gray-800">0</p>
+            </div>
+            <div class="text-center">
+                <span class="text-xs text-gray-500">正解数</span>
+                <p id="correct-count" class="font-orbitron text-xl font-bold text-green-600">0</p>
+            </div>
+            <div class="text-center">
+                <span class="text-xs text-gray-500">問題</span>
+                <p id="question-count" class="font-orbitron text-xl font-bold text-purple-600">1</p>
+            </div>
+            <div id="timer-container" class="text-center">
+                <span class="text-xs text-gray-500">TIME</span>
+                <p id="timer" class="font-orbitron text-xl font-bold text-red-500">60</p>
+            </div>
+        </div>
+
+        <div id="combo-display" class="h-6 mb-2 text-center transition-all">
+            <span id="combo-text" class="text-xl font-bold text-orange-500 opacity-0 transform scale-0"></span>
+        </div>
+        
+        <main id="main-content" class="bg-blue-50/80 border-2 border-blue-200 p-6 rounded-lg text-center min-h-[350px] flex flex-col justify-center">
+            <!-- スタート画面 -->
+            <div id="start-screen">
+                <!-- 自己ベストとルールボタンを同じ行に配置 -->
+                <div class="flex justify-between items-stretch w-full mb-4 space-x-3">
+                    <div class="flex-1 bg-white/50 p-3 rounded-lg text-center">
+                        <h3 class="font-bold text-sm text-blue-800">自己ベスト</h3>
+                        <p id="high-score" class="font-orbitron text-2xl text-blue-600">0</p>
+                    </div>
+                    <button id="rules-button" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-md transform hover:scale-105 transition-transform">
+                        📖 ルール
+                    </button>
+                </div>
+            
+                <!-- ランキング表示エリア -->
+                <div class="bg-white/50 p-3 rounded-lg h-36 mb-6">
+                    <h3 class="font-bold text-sm text-center text-orange-800 mb-2">ランキング</h3>
+                    <div class="h-24 overflow-x-auto overflow-y-auto">
+                        <ol id="ranking-list" class="list-decimal list-inside text-sm text-left text-orange-700 whitespace-nowrap">
+                            <li>読み込み中...</li>
+                        </ol>
+                    </div>
+                </div>
+            
+                <!-- ゲームスタートボタンを2分割 -->
+                <div class="flex space-x-2 mb-4">
+                    <button id="start-game-button" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform">
+                        🎮 ゲーム<br>スタート
+                    </button>
+                    <button id="start-lecture-button" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform">
+                        👨‍🔬 博士の<br>講義
+                    </button>
+                </div>
+                
+                <div class="flex justify-center mt-6 ">
+                     <div class="text-5xl animate-bounce">🧪</div>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 my-2">挑戦を始めるかね？</h2>
+            </div>
+
+            <!-- 問題画面 -->
+            <div id="question-screen" class="hidden">
+                <p class="text-sm text-gray-500 mb-2">【ミッション】</p>
+                <div id="question-text" class="text-xl font-bold text-gray-900 mb-4 h-24 flex flex-col items-center justify-center text-center"></div>
+                
+                <!-- 講義モード用ヒントボタン -->
+                <div id="hint-button-container" class="hidden mb-3">
+                    <button id="show-hint-button" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors">
+                        💡 ヒントを見る
+                    </button>
+                </div>
+                
+                <form id="answer-form">
+                    <div id="normal-input-container" class="relative">
+                        <input type="number" id="answer-input" step="any" class="w-full text-center text-2xl font-bold p-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition pr-16" placeholder="答えを入力..." autocomplete="off">
+                        <p id="unit" class="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-500 pointer-events-none"></p>
+                    </div>
+                    <div id="scientific-input-container" class="hidden flex items-center justify-center space-x-2">
+                        <input type="number" id="mantissa-input" step="any" class="w-1/2 text-center text-2xl font-bold p-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition">
+                        <span class="text-xl font-bold text-gray-700">× 10</span>
+                        <input type="number" id="exponent-input" step="1" class="w-1/4 text-center text-2xl font-bold p-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition" placeholder="指数">
+                    </div>
+                    <button type="submit" id="submit-answer-button" class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-md transform hover:scale-105 transition-transform">解答する！</button>
+                </form>
+            </div>
+
+            <!-- 結果画面 -->
+            <div id="result-screen" class="hidden">
+                 <h2 class="text-2xl font-bold text-red-500 mb-2">タイムアップ！</h2>
+                <p class="text-gray-700">君の最終スコアは...</p>
+               <p id="final-score" class="font-orbitron text-6xl font-bold my-2 text-gray-800">0</p>
+                <p id="final-rank" class="text-xl font-bold text-amber-600 my-2 hidden"></p>
+                
+                <div class="flex justify-around text-center my-4 bg-white/50 p-3 rounded-lg">
+                    <div>
+                        <span class="text-sm font-bold text-gray-600">正解数</span>
+                        <p id="final-correct-count" class="font-orbitron text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div>
+                        <span class="text-sm font-bold text-gray-600">問題数</span>
+                        <p id="final-question-count" class="font-orbitron text-2xl font-bold text-purple-600">0</p>
+                    </div>
+                    <div>
+                        <span class="text-sm font-bold text-gray-600">正答率</span>
+                        <p id="final-accuracy" class="font-orbitron text-2xl font-bold text-blue-600">0.0%</p>
+                    </div>
+                </div>
+
+                <p id="result-message" class="text-gray-600 font-semibold mb-4">素晴らしい！ 次は更なる高みへ！</p>
+                
+                <div id="new-highscore-form" class="hidden mb-4">
+                    <p class="text-green-600 font-bold mb-2 animate-pulse">ランキング入り！名前を記録せよ！</p>
+                    <form id="save-score-form" class="flex space-x-2">
+                        <input type="text" id="player-name-input" class="w-full text-center text-lg font-bold p-2 rounded-lg border-2 border-green-300 focus:border-green-500" placeholder="なまえ" maxlength="8" required>
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">記録</button>
+                    </form>
+                </div>
+
+                <div id="result-buttons" class="flex flex-col space-y-2">
+                    <button id="restart-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transform hover:scale-105 transition-transform">もう一度挑戦！</button>
+                </div>
+                <button id="result-back-to-title-button" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform">タイトルへ戻る</button>
+            </div>
+        </main>
+        
+        <footer id="doctor-comment" class="mt-4 text-center min-h-[40px] flex items-center justify-center bg-gray-50/80 p-2 rounded-lg">
+            <p id="doctor-text" class="text-gray-600">👨‍🔬 ワシが博士じゃ。君の挑戦を待っておるぞ。</p>
+        </footer>
+
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, setLogLevel, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import firebaseConfig from './firebase-config.js';
+        
+        // --- DOM要素の取得 ---
+        const gameContainer = document.getElementById('game-container');
+        const bgAnimation = document.getElementById('bg-animation');
+        const incorrectFlash = document.getElementById('incorrect-flash');
+        const statusBar = document.getElementById('status-bar');
+        const scoreEl = document.getElementById('score');
+        const timerEl = document.getElementById('timer');
+        const timerContainer = document.getElementById('timer-container');
+        const correctCountEl = document.getElementById('correct-count');
+        const questionCountEl = document.getElementById('question-count');
+        const comboTextEl = document.getElementById('combo-text');
+        
+        const startScreen = document.getElementById('start-screen');
+        const questionScreen = document.getElementById('question-screen');
+        const resultScreen = document.getElementById('result-screen');
+
+        const startGameButton = document.getElementById('start-game-button');
+        const startLectureButton = document.getElementById('start-lecture-button');
+        const restartButton = document.getElementById('restart-button');
+        const backToTitleButton = document.getElementById('back-to-title-button');
+        const resultBackToTitleButton = document.getElementById('result-back-to-title-button');
+        const rulesButton = document.getElementById('rules-button');
+        const rulesPopup = document.getElementById('rules-popup');
+        const closeRulesButton = document.getElementById('close-rules-button');
+        
+        const questionTextEl = document.getElementById('question-text');
+        const answerForm = document.getElementById('answer-form');
+        const unitEl = document.getElementById('unit');
+        const submitAnswerButton = document.getElementById('submit-answer-button');
+
+        const normalInputContainer = document.getElementById('normal-input-container');
+        const answerInput = document.getElementById('answer-input');
+        const scientificInputContainer = document.getElementById('scientific-input-container');
+        const mantissaInput = document.getElementById('mantissa-input');
+        const exponentInput = document.getElementById('exponent-input');
+
+        const hintButtonContainer = document.getElementById('hint-button-container');
+        const showHintButton = document.getElementById('show-hint-button');
+        const hintPanel = document.getElementById('hint-panel');
+        const hintContent = document.getElementById('hint-content');
+        const explanationPanel = document.getElementById('explanation-panel');
+        const explanationContent = document.getElementById('explanation-content');
+
+        const finalScoreEl = document.getElementById('final-score');
+        const resultMessageEl = document.getElementById('result-message');
+        const doctorTextEl = document.getElementById('doctor-text');
+
+        const highScoreEl = document.getElementById('high-score');
+        const rankingListEl = document.getElementById('ranking-list');
+        const newHighscoreForm = document.getElementById('new-highscore-form');
+        const saveScoreForm = document.getElementById('save-score-form');
+        const playerNameInput = document.getElementById('player-name-input');
+        const resultButtons = document.getElementById('result-buttons');
+        
+        // --- Firebase関連の変数 ---
+        let db, auth;
+        let rankingData = [];
+        let unsubscribeRanking; 
+
+        // --- ゲームの基本設定 ---
+        const GAME_TIME = 60;
+        const AVOGADRO_CONSTANT = 6.0e23;
+        const MOLAR_VOLUME = 22.4;
+        const HIGH_SCORE_KEY = 'moleMasterHighScore_v3_local';
+        const RANKING_SIZE = 10; 
+
+        const ATOMIC_MASSES = { H: 1.0, C: 12, N: 14, O: 16, Na: 23, Mg: 24, S: 32, Cl: 35.5, Ca: 40, Ne: 20, Al: 27, He: 4, Ar: 40, Fe: 56, Cu: 63.5, Ag: 108 };
+
+        // --- レベル別データプール ---
+        const molValues_L1 = [0.1, 0.5, 1.0, 1.5, 2.0, 5.0, 10];
+        const molValues_L2 = [0.01, 0.02, 0.03, 0.05, 0.2, 0.25, 0.3, 2.5, 3.0, 4.0];
+        const molValues_L3 = [0.04, 0.08, 0.09, 1.25, 0.4, 0.6, 0.7, 0.8, 0.9, 6.0, 7.0, 8.0, 9.0];
+
+        const substances_L1 = [
+            { name: '水素', formula: 'H₂', molarMass: ATOMIC_MASSES.H * 2, state: 'gas' }, { name: '炭素', formula: 'C', molarMass: ATOMIC_MASSES.C, state: 'solid' },
+            { name: '窒素', formula: 'N₂', molarMass: ATOMIC_MASSES.N * 2, state: 'gas' }, { name: '酸素', formula: 'O₂', molarMass: ATOMIC_MASSES.O * 2, state: 'gas' },
+            { name: 'ネオン', formula: 'Ne', molarMass: ATOMIC_MASSES.Ne, state: 'gas' }, { name: 'ナトリウム', formula: 'Na', molarMass: ATOMIC_MASSES.Na, state: 'solid' },
+            { name: 'マグネシウム', formula: 'Mg', molarMass: ATOMIC_MASSES.Mg, state: 'solid' }, { name: 'アルミニウム', formula: 'Al', molarMass: ATOMIC_MASSES.Al, state: 'solid' },
+            { name: '水', formula: 'H₂O', molarMass: ATOMIC_MASSES.H * 2 + ATOMIC_MASSES.O, state: 'liquid' },
+            { name: 'アンモニア', formula: 'NH₃', molarMass: ATOMIC_MASSES.N + ATOMIC_MASSES.H * 3, state: 'gas' },
+            { name: 'メタン', formula: 'CH₄', molarMass: ATOMIC_MASSES.C + ATOMIC_MASSES.H * 4, state: 'gas' },
+            { name: '二酸化炭素', formula: 'CO₂', molarMass: ATOMIC_MASSES.C + ATOMIC_MASSES.O * 2, state: 'gas' },
+        ];
+        const substances_L2 = [
+            { name: '塩素', formula: 'Cl₂', molarMass: ATOMIC_MASSES.Cl * 2, state: 'gas' }, { name: '硫黄', formula: 'S', molarMass: ATOMIC_MASSES.S, state: 'solid' },
+            { name: 'ヘリウム', formula: 'He', molarMass: ATOMIC_MASSES.He, state: 'gas' }, { name: 'アルゴン', formula: 'Ar', molarMass: ATOMIC_MASSES.Ar, state: 'gas' },
+            { name: '鉄', formula: 'Fe', molarMass: ATOMIC_MASSES.Fe, state: 'solid' }, { name: '銅', formula: 'Cu', molarMass: ATOMIC_MASSES.Cu, state: 'solid' },
+            { name: '水酸化ナトリウム', formula: 'NaOH', molarMass: ATOMIC_MASSES.Na + ATOMIC_MASSES.O + ATOMIC_MASSES.H, state: 'solid' },
+            { name: 'グルコース', formula: 'C₆H₁₂O₆', molarMass: ATOMIC_MASSES.C * 6 + ATOMIC_MASSES.H * 12 + ATOMIC_MASSES.O * 6, state: 'solid' },
+            { name: '硝酸', formula: 'HNO₃', molarMass: ATOMIC_MASSES.H + ATOMIC_MASSES.N + ATOMIC_MASSES.O * 3, state: 'aq' },
+            { name: '硫酸', formula: 'H₂SO₄', molarMass: ATOMIC_MASSES.H * 2 + ATOMIC_MASSES.S + ATOMIC_MASSES.O * 4, state: 'aq' },
+            { name: '酢酸', formula: 'CH₃COOH', molarMass: ATOMIC_MASSES.C * 2 + ATOMIC_MASSES.H * 4 + ATOMIC_MASSES.O * 2, state: 'liquid' },
+        ];
+        const substances_L3 = [
+            { name: '尿素', formula: '(NH₂)₂CO', molarMass: (ATOMIC_MASSES.N + ATOMIC_MASSES.H * 2) * 2 + ATOMIC_MASSES.C + ATOMIC_MASSES.O, state: 'solid' },
+            { name: '一酸化炭素', formula: 'CO', molarMass: ATOMIC_MASSES.C + ATOMIC_MASSES.O, state: 'gas' },
+            { name: '炭酸カルシウム', formula: 'CaCO₃', molarMass: ATOMIC_MASSES.Ca + ATOMIC_MASSES.C + ATOMIC_MASSES.O * 3, state: 'solid' },
+            { name: '酸化マグネシウム', formula: 'MgO', molarMass: ATOMIC_MASSES.Mg + ATOMIC_MASSES.O, state: 'solid' },
+            { name: '二酸化硫黄', formula: 'SO₂', molarMass: ATOMIC_MASSES.S + ATOMIC_MASSES.O * 2, state: 'gas' },
+            { name: '硫酸イオン', formula: 'SO₄²⁻', molarMass: ATOMIC_MASSES.S + ATOMIC_MASSES.O * 4, state: 'ion' },
+            { name: '硝酸イオン', formula: 'NO₃⁻', molarMass: ATOMIC_MASSES.N + ATOMIC_MASSES.O * 3, state: 'ion' },
+            { name: 'エタン', formula: 'C₂H₆', molarMass: ATOMIC_MASSES.C * 2 + ATOMIC_MASSES.H * 6, state: 'gas' },
+            { name: 'プロパン', formula: 'C₃H₈', molarMass: ATOMIC_MASSES.C * 3 + ATOMIC_MASSES.H * 8, state: 'gas' },
+            { name: '酸化アルミニウム', formula: 'Al₂O₃', molarMass: ATOMIC_MASSES.Al * 2 + ATOMIC_MASSES.O * 3, state: 'solid' },
+            { name: '酸化鉄(III)', formula: 'Fe₂O₃', molarMass: ATOMIC_MASSES.Fe * 2 + ATOMIC_MASSES.O * 3, state: 'solid' },
+            { name: '銀', formula: 'Ag', molarMass: ATOMIC_MASSES.Ag, state: 'solid' },
+            { name: 'エタノール', formula: 'C₂H₅OH', molarMass: ATOMIC_MASSES.C * 2 + ATOMIC_MASSES.H * 6 + ATOMIC_MASSES.O, state: 'liquid' },
+        ];
+        
+        let score = 0, timeLeft = GAME_TIME, combo = 0, warmthLevel = 0, questionCount = 0, correctCount = 0;
+        let timerInterval, currentCorrectAnswer = 0, isScientific = false, isFever = false;
+        let isLectureMode = false; // 講義モードフラグ
+        let currentQuestionData = {}; // 現在の問題データを保存
+        let isExplanationShown = false; // 解説表示状態
+
+        // --- Firebase初期化と認証 ---
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug');
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        loadTitleScreenData();
+                    } else {
+                        doctorTextEl.textContent = "👨‍🔬 認証に失敗したぞ…リロードしてみてくれ。";
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                rankingListEl.innerHTML = '<li>接続エラー</li>';
+                doctorTextEl.textContent = "👨‍🔬 ランキングサーバーへの接続に失敗したぞ…";
+            }
+        }
+
+        // --- 画面遷移 & データロード ---
+        function showScreen(screenId) {
+            startScreen.classList.add('hidden');
+            questionScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            document.getElementById(screenId).classList.remove('hidden');
+
+            statusBar.classList.toggle('hidden', screenId !== 'question-screen');
+            statusBar.classList.toggle('flex', screenId === 'question-screen');
+            backToTitleButton.classList.toggle('hidden', screenId !== 'question-screen');
+        }
+        
+        function resetToTitle() {
+            clearInterval(timerInterval);
+            score = 0; combo = 0; timeLeft = GAME_TIME; warmthLevel = 0; questionCount = 0; correctCount = 0;
+            isLectureMode = false;
+            isExplanationShown = false;
+            updateBackgroundColor(); updateScore(); updateTimer(); hideCombo(); endFeverMode();
+            hideHintPanel();
+            hideExplanationPanel();
+            doctorTextEl.textContent = '👨‍🔬 ワシが博士じゃ。君の挑戦を待っておるぞ。';
+            loadTitleScreenData();
+            showScreen('start-screen');
+        }
+
+        // --- データハンドリング (Firebase) ---
+        function loadTitleScreenData() {
+            const highScore = localStorage.getItem(HIGH_SCORE_KEY) || 0;
+            highScoreEl.textContent = highScore;
+            const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
+            const q = query(rankingCollection, orderBy("score", "desc"), limit(100));
+            if(unsubscribeRanking) unsubscribeRanking();
+            unsubscribeRanking = onSnapshot(q, (querySnapshot) => {
+                rankingData = [];
+                rankingListEl.innerHTML = '';
+                
+                const allData = [];
+                querySnapshot.forEach((doc) => allData.push(doc.data()));
+                
+                const userBestScores = new Map();
+                allData.forEach(entry => {
+                    const currentBest = userBestScores.get(entry.name);
+                    if (!currentBest || entry.score > currentBest.score) {
+                        userBestScores.set(entry.name, entry);
+                    }
+                });
+                
+                rankingData = Array.from(userBestScores.values())
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, RANKING_SIZE);
+                
+                if (rankingData.length > 0) {
+                    rankingData.forEach(entry => {
+                        const li = document.createElement('li');
+                        li.textContent = `${entry.name} - ${entry.score} (${entry.correct}問)`;
+                        rankingListEl.appendChild(li);
+                    });
+                } else {
+                    rankingListEl.innerHTML = '<li>まだ誰もいないぞ！一番乗りを目指せ！</li>';
+                }
+            }, (error) => {
+                console.error("Ranking fetch failed: ", error);
+                rankingListEl.innerHTML = '<li>読み込み失敗</li>';
+            });
+        }
+
+        
+        // --- ゲームロジック ---
+        function initGame(lectureMode = false) {
+            isLectureMode = lectureMode;
+            isExplanationShown = false;
+            score = 0; timeLeft = GAME_TIME; combo = 0; warmthLevel = 0; questionCount = 0; correctCount = 0;
+            questionCountEl.textContent = '1';
+            correctCountEl.textContent = '0';
+            updateBackgroundColor(); updateScore(); updateTimer(); hideCombo(); endFeverMode();
+            hideHintPanel();
+            hideExplanationPanel();
+            
+            // 講義モードの場合はタイマーを非表示
+            if (isLectureMode) {
+                timerContainer.classList.add('hidden');
+                hintButtonContainer.classList.remove('hidden');
+                doctorTextEl.textContent = '👨‍🔬 講義モードじゃ。じっくり学んでいくのじゃ！';
+            } else {
+                timerContainer.classList.remove('hidden');
+                hintButtonContainer.classList.add('hidden');
+                doctorTextEl.textContent = '👨‍🔬 さあ、最初のミッションじゃ！';
+            }
+            
+            showScreen('question-screen');
+            generateQuestion();
+            
+            if (!isLectureMode) {
+                timerInterval = setInterval(countdown, 1000);
+            }
+        }
+
+        function generateQuestion() {
+            questionCount++;
+            questionCountEl.textContent = questionCount;
+            isExplanationShown = false;
+            submitAnswerButton.textContent = '解答する！';
+            submitAnswerButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            submitAnswerButton.classList.add('bg-green-500', 'hover:bg-green-600');
+            hideExplanationPanel();
+            
+            let substancePool, molPool, substance;
+            let answer = 0, unit = '';
+            isScientific = false;
+            questionTextEl.innerHTML = '';
+
+            const rank = Math.floor(correctCount / 10) + 1;
+            const rand = Math.random();
+
+            if (rank === 1) {
+                substancePool = substances_L1; molPool = molValues_L1;
+            } else if (rank === 2) {
+                if (rand < 0.5) { substancePool = substances_L1; molPool = molValues_L1; } 
+                else { substancePool = substances_L2; molPool = molValues_L2; }
+            } else if (rank === 3) {
+                if (rand < 0.3) { substancePool = substances_L1; molPool = molValues_L1; } 
+                else if (rand < 0.7) { substancePool = substances_L2; molPool = molValues_L2; } 
+                else { substancePool = substances_L3; molPool = molValues_L3; }
+            } else {
+                if (rand < 0.5) { substancePool = substances_L2; molPool = molValues_L2; } 
+                else { substancePool = substances_L3; molPool = molValues_L3; }
+            }
+
+            let questionType;
+            let givenValue, givenUnit;
+            
+            // --- 応用問題 (20問正解以降) ---
+            if (correctCount >= 20 && Math.random() < 0.3) {
+                let complexQuestionType = Math.floor(Math.random() * 6);
+                const randomMol = molPool[Math.floor(Math.random() * molPool.length)];
+
+                if ([0, 1, 4, 5].includes(complexQuestionType)) {
+                    const gasPool = substancePool.filter(s => s.state === 'gas');
+                    if (gasPool.length > 0) {
+                        substance = gasPool[Math.floor(Math.random() * gasPool.length)];
+                    } else {
+                        substance = substancePool[Math.floor(Math.random() * substancePool.length)];
+                        complexQuestionType = 2; 
+                    }
+                } else {
+                    substance = substancePool[Math.floor(Math.random() * substancePool.length)];
+                }
+
+                switch (complexQuestionType) {
+                    case 0: // g -> L
+                        const massForL = randomMol * substance.molarMass;
+                        questionTextEl.innerHTML = `<div>${massForL.toPrecision(3)} g の ${substance.name}(${substance.formula}) は標準状態で</div><div>何Lかね？</div>`;
+                        answer = randomMol * MOLAR_VOLUME; unit = 'L';
+                        givenValue = massForL; givenUnit = 'g';
+                        questionType = 'g_to_L';
+                        break;
+                    case 1: // L -> g
+                        const volumeForG = randomMol * MOLAR_VOLUME;
+                        questionTextEl.innerHTML = `<div>標準状態で ${volumeForG.toPrecision(3)} L の ${substance.name}(${substance.formula}) は</div><div>何gかね？</div>`;
+                        answer = randomMol * substance.molarMass; unit = 'g';
+                        givenValue = volumeForG; givenUnit = 'L';
+                        questionType = 'L_to_g';
+                        break;
+                    case 2: // g -> particles
+                        const massForP = randomMol * substance.molarMass;
+                        questionTextEl.innerHTML = `<div>${massForP.toPrecision(3)} g の ${substance.name}(${substance.formula}) は</div><div>何個かね？</div>`;
+                        answer = randomMol * AVOGADRO_CONSTANT; isScientific = true;
+                        givenValue = massForP; givenUnit = 'g';
+                        questionType = 'g_to_particles';
+                        break;
+                    case 3: // particles -> g
+                        const particlesForG = randomMol * AVOGADRO_CONSTANT;
+                        const [mantG, expG] = particlesForG.toExponential(1).split('e+');
+                        questionTextEl.innerHTML = `<div class="leading-none"><span class="font-orbitron text-3xl">${mantG}</span><span class="mx-1 text-2xl">×</span><span class="font-orbitron text-3xl">10<sup>${expG}</sup></span><span class="ml-2 text-xl">個の</span></div><div>${substance.name}(${substance.formula}) は何gかね？</div>`;
+                        answer = randomMol * substance.molarMass; unit = 'g';
+                        givenValue = particlesForG; givenUnit = '個';
+                        questionType = 'particles_to_g';
+                        break;
+                    case 4: // L -> particles
+                        const volumeForP = randomMol * MOLAR_VOLUME;
+                        questionTextEl.innerHTML = `<div>標準状態で ${volumeForP.toPrecision(3)} L の ${substance.name}(${substance.formula}) は</div><div>何個かね？</div>`;
+                        answer = randomMol * AVOGADRO_CONSTANT; isScientific = true;
+                        givenValue = volumeForP; givenUnit = 'L';
+                        questionType = 'L_to_particles';
+                        break;
+                    case 5: // particles -> L
+                        const particlesForL = randomMol * AVOGADRO_CONSTANT;
+                        const [mantL, expL] = particlesForL.toExponential(1).split('e+');
+                        questionTextEl.innerHTML = `<div class="leading-none"><span class="font-orbitron text-3xl">${mantL}</span><span class="mx-1 text-2xl">×</span><span class="font-orbitron text-3xl">10<sup>${expL}</sup></span><span class="ml-2 text-xl">個の</span></div><div>${substance.name}(${substance.formula}) は標準状態で何Lかね？</div>`;
+                        answer = randomMol * MOLAR_VOLUME; unit = 'L';
+                        givenValue = particlesForL; givenUnit = '個';
+                        questionType = 'particles_to_L';
+                        break;
+                }
+            } else {
+                // --- 通常問題 (mol変換) ---
+                substance = substancePool[Math.floor(Math.random() * substancePool.length)];
+                do {
+                    questionType = Math.floor(Math.random() * 6);
+                } while ((questionType === 2 || questionType === 3) && (substance.state !== 'gas'));
+                
+                const randomMol = molPool[Math.floor(Math.random() * molPool.length)];
+                const answerMol = molPool[Math.floor(Math.random() * molPool.length)];
+
+                switch (questionType) {
+                    case 0: // mol -> g
+                        questionTextEl.innerHTML = `<div>${randomMol} mol の ${substance.name}(${substance.formula}) は</div><div>何gかね？</div>`;
+                        answer = randomMol * substance.molarMass; unit = 'g';
+                        givenValue = randomMol; givenUnit = 'mol';
+                        questionType = 'mol_to_g';
+                        break;
+                    case 1: // g -> mol
+                        const randomMass = answerMol * substance.molarMass;
+                        questionTextEl.innerHTML = `<div>${randomMass.toPrecision(3)} g の ${substance.name}(${substance.formula}) は</div><div>何molかね？</div>`;
+                        answer = answerMol; unit = 'mol';
+                        givenValue = randomMass; givenUnit = 'g';
+                        questionType = 'g_to_mol';
+                        break;
+                    case 2: // mol -> L
+                        questionTextEl.innerHTML = `<div>${randomMol} mol の ${substance.name}(${substance.formula}) は標準状態で</div><div>何Lかね？</div>`;
+                        answer = randomMol * MOLAR_VOLUME; unit = 'L';
+                        givenValue = randomMol; givenUnit = 'mol';
+                        questionType = 'mol_to_L';
+                        break;
+                    case 3: // L -> mol
+                        const randomVolume = answerMol * MOLAR_VOLUME;
+                        questionTextEl.innerHTML = `<div>標準状態で ${randomVolume.toPrecision(3)} L の ${substance.name}(${substance.formula}) は</div><div>何molかね？</div>`;
+                        answer = answerMol; unit = 'mol';
+                        givenValue = randomVolume; givenUnit = 'L';
+                        questionType = 'L_to_mol';
+                        break;
+                    case 4: // mol -> particles
+                        const q4Mol = molPool[Math.floor(Math.random() * molPool.length)];
+                        questionTextEl.innerHTML = `<div>${q4Mol} mol の ${substance.name}(${substance.formula}) は</div><div>何個かね？</div>`;
+                        answer = q4Mol * AVOGADRO_CONSTANT; isScientific = true;
+                        givenValue = q4Mol; givenUnit = 'mol';
+                        questionType = 'mol_to_particles';
+                        break;
+                    case 5: // particles -> mol
+                        const numParticles = answerMol * AVOGADRO_CONSTANT;
+                        const [mant, exp] = numParticles.toExponential(1).split('e+');
+                        questionTextEl.innerHTML = `<div class="leading-none"><span class="font-orbitron text-3xl">${mant}</span><span class="mx-1 text-2xl">×</span><span class="font-orbitron text-3xl">10<sup>${exp}</sup></span><span class="ml-2 text-xl">個の</span></div><div>${substance.name}(${substance.formula}) は何molかね？</div>`;
+                        answer = answerMol; unit = 'mol';
+                        givenValue = numParticles; givenUnit = '個';
+                        questionType = 'particles_to_mol';
+                        break;
+                }
+            }
+            
+            currentCorrectAnswer = parseFloat(answer.toPrecision(3));
+            currentQuestionData = {
+                substance: substance,
+                questionType: questionType,
+                givenValue: givenValue,
+                givenUnit: givenUnit,
+                answer: currentCorrectAnswer,
+                answerUnit: unit
+            };
+            
+            normalInputContainer.classList.toggle('hidden', isScientific);
+            scientificInputContainer.classList.toggle('hidden', !isScientific);
+            unitEl.textContent = `(${unit})`;
+            answerInput.value = ''; mantissaInput.value = ''; exponentInput.value = '';
+            
+            if (isScientific) {
+                exponentInput.value = '23';
+                mantissaInput.focus();
+            } else {
+                answerInput.focus();
+            }
+        }
+
+        function checkAnswer(e) {
+            e.preventDefault();
+            
+            // 講義モードで解説表示後は次の問題へ
+            if (isLectureMode && isExplanationShown) {
+                generateQuestion();
+                return;
+            }
+            
+            let userAnswer;
+            if (isScientific) {
+                const mantissa = parseFloat(mantissaInput.value); const exponent = parseFloat(exponentInput.value);
+                if (isNaN(mantissa) || isNaN(exponent)) return;
+                userAnswer = mantissa * Math.pow(10, exponent);
+            } else {
+                userAnswer = parseFloat(answerInput.value);
+                if (isNaN(userAnswer)) return;
+            }
+            
+            if (Math.abs(userAnswer - currentCorrectAnswer) <= currentCorrectAnswer * 0.025) {
+                handleCorrectAnswer();
+            } else {
+                handleIncorrectAnswer();
+            }
+            
+            // 講義モードの場合は解説を表示
+            if (isLectureMode) {
+                showExplanation();
+                isExplanationShown = true;
+                submitAnswerButton.textContent = '次の問題';
+                submitAnswerButton.classList.remove('bg-green-500', 'hover:bg-green-600');
+                submitAnswerButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
+            }
+        }
+
+        function handleCorrectAnswer() {
+            if (!isLectureMode) {
+                createParticles();
+            }
+            combo++;
+            correctCount++;
+            correctCountEl.textContent = correctCount;
+            
+            if (!isLectureMode) {
+                const rank = Math.floor(correctCount / 8) + 1;
+                let scoreToAdd = 100 + (combo * 10) + ((rank - 1) * 20);
+                if (isFever) scoreToAdd *= 3;
+                score += scoreToAdd;
+                timeLeft = Math.min(GAME_TIME + 10, timeLeft + 3);
+                if (warmthLevel < BACKGROUND_COLORS.length - 1) { warmthLevel++; updateBackgroundColor(); }
+                updateScore(); updateTimer(); showCombo();
+                doctorTextEl.textContent = `👨‍🔬 正解じゃ！やるな！ +${scoreToAdd}点！`;
+                gameContainer.classList.add('feedback-correct');
+                setTimeout(() => gameContainer.classList.remove('feedback-correct'), 500);
+                if (combo === 5 && !isFever) startFeverMode();
+                generateQuestion();
+            } else {
+                doctorTextEl.textContent = `👨‍🔬 正解じゃ！よく理解できておるのう！`;
+                gameContainer.classList.add('feedback-correct');
+                setTimeout(() => gameContainer.classList.remove('feedback-correct'), 500);
+            }
+        }
+
+        function handleIncorrectAnswer() {
+            if (!isLectureMode) {
+                combo = 0; timeLeft -= 5;
+                if(timeLeft < 0) timeLeft = 0;
+                warmthLevel = 0; updateBackgroundColor();
+                hideCombo(); updateTimer(); endFeverMode();
+                incorrectFlash.classList.add('flash-active');
+                setTimeout(() => incorrectFlash.classList.remove('flash-active'), 400);
+            }
+            
+            let correctAnswerText;
+            if (currentCorrectAnswer > 1e5) {
+                const expNotation = currentCorrectAnswer.toExponential(1);
+                const [mantissa, exponent] = expNotation.split('e+');
+                correctAnswerText = `${mantissa}×10²³`.replace('23', exponent.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join(''));
+            } else {
+                correctAnswerText = currentCorrectAnswer.toPrecision(3);
+            }
+            
+            doctorTextEl.textContent = `👨‍🔬 むむっ、違うぞ！答えは ${correctAnswerText} じゃった。`;
+            gameContainer.classList.add('feedback-incorrect');
+            setTimeout(() => gameContainer.classList.remove('feedback-incorrect'), 500);
+            
+            if (!isLectureMode) {
+                if (timeLeft > 0) generateQuestion(); else endGame();
+            }
+        }
+        
+        async function endGame() {
+            clearInterval(timerInterval);
+            showScreen('result-screen');
+            finalScoreEl.textContent = score;
+
+            const finalCorrectCountEl = document.getElementById('final-correct-count');
+            const finalQuestionCountEl = document.getElementById('final-question-count');
+            const finalAccuracyEl = document.getElementById('final-accuracy');
+            const attemptedQuestions = questionCount > 1 ? questionCount - 1 : 0;
+            const accuracy = attemptedQuestions > 0 ? (correctCount / attemptedQuestions) * 100 : 0;
+            finalCorrectCountEl.textContent = correctCount;
+            finalQuestionCountEl.textContent = attemptedQuestions;
+            finalAccuracyEl.textContent = accuracy.toFixed(1) + '%';
+            
+            const finalRankEl = document.getElementById('final-rank');
+            
+            if (score > 0) {
+                try {
+                    const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
+                    const snapshot = await getCountFromServer(rankingCollection);
+                    const totalRecords = snapshot.data().count;
+                    
+                    let rank = 1;
+                    for (let i = 0; i < rankingData.length; i++) {
+                        if (score > rankingData[i].score) {
+                            break;
+                        }
+                        rank++;
+                    }
+                    
+                    finalRankEl.textContent = `${totalRecords + 1}人中 ${rank}位！`;
+                    finalRankEl.classList.remove('hidden');
+                } catch (error) {
+                    console.error("Could not get ranking count:", error);
+                    let rank = 1;
+                    for (let i = 0; i < rankingData.length; i++) {
+                        if (score > rankingData[i].score) {
+                            break;
+                        }
+                        rank++;
+                    }
+                    finalRankEl.textContent = `第${rank}位！`;
+                    finalRankEl.classList.remove('hidden');
+                }
+            } else {
+                finalRankEl.classList.add('hidden');
+            }
+            
+            const personalBest = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || '0');
+            if (score > personalBest) localStorage.setItem(HIGH_SCORE_KEY, score);
+            const worstScoreInRanking = rankingData.length < RANKING_SIZE ? 0 : rankingData[rankingData.length-1].score;
+
+            document.getElementById('result-back-to-title-button').classList.remove('hidden');
+
+            if (score > 0 && score >= worstScoreInRanking) {
+                newHighscoreForm.classList.remove('hidden');
+                resultButtons.classList.add('hidden');
+            } else {
+                newHighscoreForm.classList.add('hidden');
+                resultButtons.classList.remove('hidden');
+            }
+            
+            let message = '';
+            if (score > 4000) message = '素晴らしい！君はもうモル・マスターじゃ！';
+            else if (score > 2000) message = 'よくやった！なかなかの腕前じゃな。';
+            else if (score > 800) message = 'まずまずじゃな。練習すればもっと伸びるぞ！';
+            else message = 'まだまだ修行が足りんのう。再挑戦じゃ！';
+            resultMessageEl.textContent = message;
+            doctorTextEl.textContent = `👨‍🔬 ${message}`;
+        }
+
+        async function saveScore(e) {
+            e.preventDefault();
+            const playerName = playerNameInput.value.trim();
+            if (!playerName) return;
+            const submitButton = saveScoreForm.querySelector('button');
+            submitButton.disabled = true;
+            submitButton.textContent = '記録中...';
+            try {
+                const rankingCollection = collection(db, 'artifacts', 'mole-master-game', 'public', 'data', 'ranking');
+                await addDoc(rankingCollection, { 
+                    name: playerName, 
+                    score: score, 
+                    questions: questionCount,
+                    correct: correctCount,
+                    createdAt: new Date()
+                });
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("スコアの記録に失敗しました。");
+            } finally {
+                newHighscoreForm.classList.add('hidden');
+                resultButtons.classList.remove('hidden');
+                submitButton.disabled = false;
+                submitButton.textContent = '記録';
+            }
+        }
+
+        function countdown() {
+            timeLeft--;
+            updateTimer();
+            if (timeLeft <= 0) endGame();
+        }
+
+        // --- ヒント・解説機能 ---
+        function showHint() {
+            const data = currentQuestionData;
+            let hintHTML = '<div class="space-y-3">';
+            
+            hintHTML += `<div class="bg-blue-50 p-3 rounded-lg">`;
+            hintHTML += `<p class="font-bold text-blue-800 mb-2">📌 基本情報</p>`;
+            hintHTML += `<p class="text-sm">・物質: ${data.substance.name}(${data.substance.formula})</p>`;
+            hintHTML += `<p class="text-sm">・分子量: ${data.substance.molarMass.toFixed(1)} g/mol</p>`;
+            hintHTML += `</div>`;
+            
+            hintHTML += `<div class="bg-yellow-50 p-3 rounded-lg">`;
+            hintHTML += `<p class="font-bold text-yellow-800 mb-2">💡 考え方のヒント</p>`;
+            
+            if (data.questionType.includes('mol_to_g') || data.questionType.includes('g_to_mol')) {
+                hintHTML += `<p class="text-sm mb-2">1 mol = ${data.substance.molarMass.toFixed(1)} g じゃ</p>`;
+                hintHTML += `<p class="text-sm">${data.givenValue} ${data.givenUnit} は何${data.answerUnit}かな？</p>`;
+            } else if (data.questionType.includes('mol_to_L') || data.questionType.includes('L_to_mol')) {
+                hintHTML += `<p class="text-sm mb-2">気体 1 mol = 22.4 L（標準状態）じゃ</p>`;
+                hintHTML += `<p class="text-sm">${data.givenValue} ${data.givenUnit} は何${data.answerUnit}かな？</p>`;
+            } else if (data.questionType.includes('particles')) {
+                hintHTML += `<p class="text-sm mb-2">1 mol = 6.0×10²³ 個 じゃ</p>`;
+                hintHTML += `<p class="text-sm">これを使って考えてみるのじゃ！</p>`;
+            } else if (data.questionType.includes('g_to_L') || data.questionType.includes('L_to_g')) {
+                hintHTML += `<p class="text-sm mb-2">まずmolに変換するのじゃ！</p>`;
+                hintHTML += `<p class="text-sm">1 mol = ${data.substance.molarMass.toFixed(1)} g</p>`;
+                hintHTML += `<p class="text-sm">1 mol = 22.4 L（標準状態）</p>`;
+            }
+            
+            hintHTML += `</div>`;
+            hintHTML += '</div>';
+            
+            hintContent.innerHTML = hintHTML;
+            hintPanel.classList.add('active');
+        }
+        
+        function showExplanation() {
+            const data = currentQuestionData;
+            let explanationHTML = '<div class="space-y-3">';
+            
+            explanationHTML += `<div class="bg-green-50 p-3 rounded-lg border-2 border-green-300">`;
+            explanationHTML += `<p class="font-bold text-green-800 mb-2">✅ 正解</p>`;
+            explanationHTML += `<p class="text-2xl font-bold text-green-700">${data.answer} ${data.answerUnit}</p>`;
+            explanationHTML += `</div>`;
+            
+            explanationHTML += `<div class="bg-blue-50 p-3 rounded-lg">`;
+            explanationHTML += `<p class="font-bold text-blue-800 mb-3">📝 解き方</p>`;
+            
+            // 問題タイプ別の解説
+            if (data.questionType === 'mol_to_g') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 1 mol = ${data.substance.molarMass.toFixed(1)} g を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center">`;
+                explanationHTML += `<p class="text-sm">1 mol : ${data.substance.molarMass.toFixed(1)} g = ${data.givenValue} mol : ? g</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">? = ${data.substance.molarMass.toFixed(1)} × ${data.givenValue} ÷ 1</p>`;
+                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer} g</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'g_to_mol') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 1 mol = ${data.substance.molarMass.toFixed(1)} g を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center">`;
+                explanationHTML += `<p class="text-sm">${data.substance.molarMass.toFixed(1)} g : 1 mol = ${data.givenValue.toPrecision(3)} g : ? mol</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">? = 1 × ${data.givenValue.toPrecision(3)} ÷ ${data.substance.molarMass.toFixed(1)}</p>`;
+                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'mol_to_L') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 気体 1 mol = 22.4 L を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center">`;
+                explanationHTML += `<p class="text-sm">1 mol : 22.4 L = ${data.givenValue} mol : ? L</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">? = 22.4 × ${data.givenValue} ÷ 1</p>`;
+                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer} L</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'L_to_mol') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 気体 22.4 L = 1 mol を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center">`;
+                explanationHTML += `<p class="text-sm">22.4 L : 1 mol = ${data.givenValue.toPrecision(3)} L : ? mol</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">? = 1 × ${data.givenValue.toPrecision(3)} ÷ 22.4</p>`;
+                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'mol_to_particles') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 1 mol = 6.0×10²³ 個 を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center text-xs">`;
+                explanationHTML += `<p>1 mol : 6.0×10²³ 個 = ${data.givenValue} mol : ? 個</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">? = 6.0×10²³ × ${data.givenValue}</p>`;
+                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer.toExponential(1)} 個</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'particles_to_mol') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 6.0×10²³ 個 = 1 mol を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center text-xs">`;
+                explanationHTML += `<p>6.0×10²³ 個 : 1 mol = ${data.givenValue.toExponential(1)} 個 : ? mol</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">? = 1 × ${data.givenValue.toExponential(1)} ÷ 6.0×10²³</p>`;
+                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'g_to_L' || data.questionType === 'L_to_g') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> まず mol に変換する</p>`;
+                const intermediateMol = data.givenUnit === 'g' 
+                    ? (data.givenValue / data.substance.molarMass)
+                    : (data.givenValue / MOLAR_VOLUME);
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                if (data.givenUnit === 'g') {
+                    explanationHTML += `<p class="text-sm">${data.givenValue.toPrecision(3)} g ÷ ${data.substance.molarMass.toFixed(1)} g/mol = ${intermediateMol.toPrecision(3)} mol</p>`;
+                } else {
+                    explanationHTML += `<p class="text-sm">${data.givenValue.toPrecision(3)} L ÷ 22.4 L/mol = ${intermediateMol.toPrecision(3)} mol</p>`;
+                }
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> mol から ${data.answerUnit} に変換</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                if (data.answerUnit === 'L') {
+                    explanationHTML += `<p class="text-sm">${intermediateMol.toPrecision(3)} mol × 22.4 L/mol = <span class="font-bold text-green-600">${data.answer} L</span></p>`;
+                } else {
+                    explanationHTML += `<p class="text-sm">${intermediateMol.toPrecision(3)} mol × ${data.substance.molarMass.toFixed(1)} g/mol = <span class="font-bold text-green-600">${data.answer} g</span></p>`;
+                }
+                explanationHTML += `</div>`;
+            }
+            
+            explanationHTML += `</div>`;
+            
+            explanationHTML += `<div class="bg-purple-50 p-3 rounded-lg">`;
+            explanationHTML += `<p class="font-bold text-purple-800 mb-2">🎯 ポイント</p>`;
+            explanationHTML += `<p class="text-sm">比の計算を使えば、カンタンじゃ！</p>`;
+            explanationHTML += `<p class="text-sm mt-1">「1 molが何g（または何L、何個）か」を覚えて、比の式を作ろう！</p>`;
+            explanationHTML += `</div>`;
+            
+            explanationHTML += '</div>';
+            
+            explanationContent.innerHTML = explanationHTML;
+            explanationPanel.classList.add('active');
+        }
+        
+        function hideHintPanel() {
+            hintPanel.classList.remove('active');
+        }
+        
+        function hideExplanationPanel() {
+            explanationPanel.classList.remove('active');
+        }
+
+        const BACKGROUND_COLORS = [
+            'linear-gradient(45deg, #e0c3fc, #8ec5fc, #6a82fb, #fcb69f)','linear-gradient(45deg, #d299c2, #fef9d7, #a1c4fd, #c2e9fb)','linear-gradient(45deg, #ff9a9e, #fecfef, #ffdde1, #ee9ca7)','linear-gradient(45deg, #fbc2eb, #a6c1ee, #f093fb, #f5576c)','linear-gradient(45deg, #fccb90, #d57eeb, #f83600, #f9d423)','linear-gradient(45deg, #ff7e5f, #feb47b, #f6d365, #fda085)','linear-gradient(45deg, #f09819, #edde5d, #ff512f, #dd2476)','linear-gradient(45deg, #eb3349, #f45c43, #ff4e50, #f9d423)'
+        ];
+        function updateBackgroundColor() { bgAnimation.style.backgroundImage = BACKGROUND_COLORS[warmthLevel]; }
+        function updateScore() { scoreEl.textContent = score; }
+        function updateTimer() {
+            timerEl.textContent = timeLeft;
+            timerEl.classList.toggle('text-yellow-500', timeLeft <= 20 && timeLeft > 10);
+            timerEl.classList.toggle('text-red-500', timeLeft <= 10);
+            timerEl.classList.toggle('animate-pulse', timeLeft <= 10 && timeLeft > 0);
+        }
+        function showCombo() {
+            if (combo >= 2) {
+                comboTextEl.textContent = isFever ? `🔥 FEVER! ${combo} COMBO!` : `${combo} COMBO!`;
+                comboTextEl.classList.remove('opacity-0', 'scale-0');
+                comboTextEl.classList.add('opacity-100', 'scale-100');
+            }
+        }
+        function hideCombo() {
+            comboTextEl.classList.remove('opacity-100', 'scale-100');
+            comboTextEl.classList.add('opacity-0', 'scale-0');
+        }
+        function startFeverMode() {
+            isFever = true;
+            gameContainer.classList.add('fever-mode');
+            doctorTextEl.textContent = '👨‍🔬 🔥フィーバータイム突入じゃ！チャンスじゃぞ！';
+            setTimeout(endFeverMode, 7000);
+        }
+        function endFeverMode() { isFever = false; gameContainer.classList.remove('fever-mode'); }
+
+        const PARTICLE_COLORS = ['#FFD700', '#FFA500', '#FF6347', '#FFFFFF', '#87CEEB', '#98FB98', '#f9a', '#a9f'];
+        function createParticles() {
+            const answerBtn = answerForm.querySelector('button');
+            const rect = answerBtn.getBoundingClientRect();
+            for (let i = 0; i < 50; i++) {
+                const p = document.createElement('div'); p.className = 'particle';
+                const isRect = Math.random() > 0.2;
+                const width = Math.random() * 10 + 5;
+                const height = isRect ? Math.random() * 5 + 5 : width;
+                p.style.width = `${width}px`; p.style.height = `${height}px`;
+                p.style.backgroundColor = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
+                const x = rect.left + rect.width / 2; const y = rect.top + rect.height / 2;
+                const angle = Math.random() * 360; const distance = Math.random() * 120 + 60;
+                const endX = Math.cos(angle * Math.PI / 180) * distance;
+                const endY = Math.sin(angle * Math.PI / 180) * distance + 40;
+                p.style.setProperty('--start-x', `${x}px`); p.style.setProperty('--start-y', `${y}px`);
+                p.style.setProperty('--end-x', `${x + endX}px`); p.style.setProperty('--end-y', `${y + endY}px`);
+                p.style.setProperty('--rot-x', `${Math.random() * 2 - 1}`);
+                p.style.setProperty('--rot-y', `${Math.random() * 2 - 1}`);
+                p.style.setProperty('--rot-z', `${Math.random() * 2 - 1}`);
+                p.style.animationDuration = `${Math.random() * 0.8 + 1.0}s`;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 1800);
+            }
+        }
+
+        // --- イベントリスナー & 初期化 ---
+        startGameButton.addEventListener('click', () => initGame(false));
+        startLectureButton.addEventListener('click', () => initGame(true));
+        restartButton.addEventListener('click', () => initGame(false));
+        backToTitleButton.addEventListener('click', resetToTitle);
+        resultBackToTitleButton.addEventListener('click', resetToTitle);
+
+        rulesButton.addEventListener('click', () => rulesPopup.classList.add('active'));
+        closeRulesButton.addEventListener('click', () => rulesPopup.classList.remove('active'));
+        
+        rulesPopup.addEventListener('click', (e) => {
+            if (e.target === rulesPopup) rulesPopup.classList.remove('active');
+        });
+        
+        showHintButton.addEventListener('click', showHint);
+        answerForm.addEventListener('submit', checkAnswer);
+        saveScoreForm.addEventListener('submit', saveScore);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase();
+            updateBackgroundColor();
+        });
+    </script>
+</body>
+</html>
