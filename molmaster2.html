@@ -155,12 +155,12 @@
         .side-panel.active {
             opacity: 1;
             pointer-events: all;
-        }
+                }
         #hint-panel {
             left: calc(50% - 224px - 310px);  /* メインパネル幅の半分 + サイドパネル幅 */
         }
         #explanation-panel {
-            right: calc(50% - 224px - 420px);
+            right: calc(50% - 224px - 430px);
         }
 
         /* 博士の講義モード用の背景アニメーション */
@@ -1106,7 +1106,7 @@
                 explanationHTML += `</div>`;
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
-                explanationHTML += `<p class="text-sm">x = ${data.givenValue.toPrecision(3)} ÷ ${data.substance.molarMass.toFixed(1)}</p>`;
+                explanationHTML += `<p class="text-sm">x = <span style="display: inline-block; text-align: center; vertical-align: middle;"><span style="display: block; border-bottom: 1px solid #000; padding-bottom: 2px;">${data.givenValue.toPrecision(3)}</span><span style="display: block; padding-top: 2px;">${data.substance.molarMass.toFixed(1)}</span></span></p>`;
                 explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'mol_to_L') {
@@ -1128,7 +1128,7 @@
                 explanationHTML += `</div>`;
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
-                explanationHTML += `<p class="text-sm">x = ${data.givenValue.toPrecision(3)} ÷ 22.4</p>`;
+                explanationHTML += `<p class="text-sm">x = <span style="display: inline-block; text-align: center; vertical-align: middle;"><span style="display: block; border-bottom: 1px solid #000; padding-bottom: 2px;">${data.givenValue.toPrecision(3)}</span><span style="display: block; padding-top: 2px;">22.4</span></span></p>`;
                 explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'mol_to_particles') {
@@ -1161,7 +1161,7 @@
                 
                 const [mantissa3, exponent3] = data.givenValue.toExponential(1).split('e+');
                 const expDigits3 = exponent3.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
-                explanationHTML += `<p class="text-sm">x = ${mantissa3}×10${expDigits3} ÷ 6.0×10²³</p>`;
+                explanationHTML += `<p class="text-sm">x = <span style="display: inline-block; text-align: center; vertical-align: middle;"><span style="display: block; border-bottom: 1px solid #000; padding-bottom: 2px;">${mantissa3}×10${expDigits3}</span><span style="display: block; padding-top: 2px;">6.0×10²³</span></span></p>`;
                 
                 explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
                 explanationHTML += `</div>`;
@@ -1172,9 +1172,9 @@
                     : (data.givenValue / MOLAR_VOLUME);
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
                 if (data.givenUnit === 'g') {
-                    explanationHTML += `<p class="text-sm">${data.givenValue.toPrecision(3)} g ÷ ${data.substance.molarMass.toFixed(1)} g/mol = ${intermediateMol.toPrecision(3)} mol</p>`;
+                    explanationHTML += `<p class="text-sm"><span style="display: inline-block; text-align: center; vertical-align: middle;"><span style="display: block; border-bottom: 1px solid #000; padding-bottom: 2px;">${data.givenValue.toPrecision(3)} g</span><span style="display: block; padding-top: 2px;">${data.substance.molarMass.toFixed(1)} g/mol</span></span> = ${intermediateMol.toPrecision(3)} mol</p>`;
                 } else {
-                    explanationHTML += `<p class="text-sm">${data.givenValue.toPrecision(3)} L ÷ 22.4 L/mol = ${intermediateMol.toPrecision(3)} mol</p>`;
+                    explanationHTML += `<p class="text-sm"><span style="display: inline-block; text-align: center; vertical-align: middle;"><span style="display: block; border-bottom: 1px solid #000; padding-bottom: 2px;">${data.givenValue.toPrecision(3)} L</span><span style="display: block; padding-top: 2px;">22.4 L/mol</span></span> = ${intermediateMol.toPrecision(3)} mol</p>`;
                 }
                 explanationHTML += `</div>`;
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> mol から ${data.answerUnit} に変換</p>`;
