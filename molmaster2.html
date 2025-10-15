@@ -156,10 +156,10 @@
             pointer-events: all;
         }
         #hint-panel {
-            left: 20px;
+            left: calc(50% - 224px - 420px);  /* メインパネル幅の半分 + サイドパネル幅 */
         }
         #explanation-panel {
-            right: 20px;
+            right: calc(50% - 224px - 420px);
         }
 
         /* 博士の講義モード用の背景アニメーション */
@@ -167,7 +167,7 @@
             position: fixed;
             font-size: 48px;
             pointer-events: none;
-            z-index: 1;
+            z-index: 0;
             animation: float-random 20s ease-in-out infinite;
             opacity: 0.3;
         }
@@ -408,7 +408,17 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, setLogLevel, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import firebaseConfig from './firebase-config.js';
+        
+        // 注意: 実際のFirebase設定に置き換えてください
+        // 元のfirebase-config.jsファイルの内容をここにコピーしてください
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
         
         // --- DOM要素の取得 ---
         const gameContainer = document.getElementById('game-container');
@@ -1184,8 +1194,8 @@
             
             explanationHTML += `<div class="bg-purple-50 p-3 rounded-lg">`;
             explanationHTML += `<p class="font-bold text-purple-800 mb-2">🎯 ポイント</p>`;
-            explanationHTML += `<p class="text-sm">比の計算を使えば、中学生でも解ける！</p>`;
-            explanationHTML += `<p class="text-sm mt-1">「1 molが何g（または何L、何個）か」を覚えて、比の式を作ろう！</p>`;
+            explanationHTML += `<p class="text-sm">比の計算を使えば、カンタンじゃ！</p>`;
+            explanationHTML += `<p class="text-sm mt-1">「1 molが何g、何L、何個か」を覚えて、比の式を作ろう！</p>`;
             explanationHTML += `</div>`;
             
             explanationHTML += '</div>';
