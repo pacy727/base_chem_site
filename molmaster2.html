@@ -157,10 +157,10 @@
             pointer-events: all;
         }
         #hint-panel {
-            left: calc(50% - 224px - 310px);  /* メインパネル幅の半分 + サイドパネル幅 */
+            left: 20px;
         }
         #explanation-panel {
-            right: calc(50% - 224px - 430px);
+            right: 20px;
         }
 
         /* 博士の講義モード用の背景アニメーション */
@@ -409,7 +409,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, setLogLevel, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        
         import firebaseConfig from './firebase-config.js';
         
         // --- DOM要素の取得 ---
@@ -1042,10 +1041,16 @@
             
             if (data.questionType.includes('mol_to_g') || data.questionType.includes('g_to_mol')) {
                 hintHTML += `<p class="text-sm mb-2">1 mol = ${data.substance.molarMass.toFixed(1)} g じゃ</p>`;
-                hintHTML += `<p class="text-sm">${data.givenValue} ${data.givenUnit} は何${data.answerUnit}かな？</p>`;
+                const displayValue = typeof data.givenValue === 'number' && data.givenValue !== Math.floor(data.givenValue) 
+                    ? data.givenValue.toPrecision(2) 
+                    : data.givenValue;
+                hintHTML += `<p class="text-sm">${displayValue} ${data.givenUnit} は何${data.answerUnit}かな？</p>`;
             } else if (data.questionType.includes('mol_to_L') || data.questionType.includes('L_to_mol')) {
                 hintHTML += `<p class="text-sm mb-2">気体 1 mol = 22.4 L（標準状態）じゃ</p>`;
-                hintHTML += `<p class="text-sm">${data.givenValue} ${data.givenUnit} は何${data.answerUnit}かな？</p>`;
+                const displayValue = typeof data.givenValue === 'number' && data.givenValue !== Math.floor(data.givenValue) 
+                    ? data.givenValue.toPrecision(2) 
+                    : data.givenValue;
+                hintHTML += `<p class="text-sm">${displayValue} ${data.givenUnit} は何${data.answerUnit}かな？</p>`;
             } else if (data.questionType.includes('particles')) {
                 hintHTML += `<p class="text-sm mb-2">1 mol = 6.0×10²³ 個 じゃ</p>`;
                 hintHTML += `<p class="text-sm">これを使って考えてみるのじゃ！</p>`;
@@ -1091,7 +1096,7 @@
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
                 explanationHTML += `<p class="text-sm">x = ${data.substance.molarMass.toFixed(1)} × ${data.givenValue}</p>`;
-                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} g</span></p>`;
+                explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${data.answer} g</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'g_to_mol') {
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 1 mol = ${data.substance.molarMass.toFixed(1)} g を確認</p>`;
@@ -1102,7 +1107,7 @@
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
                 explanationHTML += `<p class="text-sm">x = ${data.givenValue.toPrecision(3)} ÷ ${data.substance.molarMass.toFixed(1)}</p>`;
-                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'mol_to_L') {
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 気体 1 mol = 22.4 L を確認</p>`;
@@ -1113,7 +1118,7 @@
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
                 explanationHTML += `<p class="text-sm">x = 22.4 × ${data.givenValue}</p>`;
-                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} L</span></p>`;
+                explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${data.answer} L</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'L_to_mol') {
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 気体 22.4 L = 1 mol を確認</p>`;
@@ -1124,7 +1129,7 @@
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
                 explanationHTML += `<p class="text-sm">x = ${data.givenValue.toPrecision(3)} ÷ 22.4</p>`;
-                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'mol_to_particles') {
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 1 mol = 6.0×10²³ 個 を確認</p>`;
@@ -1138,7 +1143,7 @@
                 
                 const [mantissa, exponent] = data.answer.toExponential(1).split('e+');
                 const expDigits = exponent.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
-                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${mantissa}×10${expDigits} 個</span></p>`;
+                explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${mantissa}×10${expDigits} 個</span></p>`;
                 
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'particles_to_mol') {
@@ -1158,7 +1163,7 @@
                 const expDigits3 = exponent3.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
                 explanationHTML += `<p class="text-sm">x = ${mantissa3}×10${expDigits3} ÷ 6.0×10²³</p>`;
                 
-                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `<p class="text-sm">  = <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'g_to_L' || data.questionType === 'L_to_g') {
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> まず mol に変換する</p>`;
