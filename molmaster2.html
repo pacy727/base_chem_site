@@ -156,10 +156,10 @@
             pointer-events: all;
         }
         #hint-panel {
-            left: calc(50% - 380px);  /* メインから少し離す */
+            left: calc(50% - 224px - 310px);  /* メインパネル幅の半分 + サイドパネル幅 */
         }
         #explanation-panel {
-            right: calc(50% - 380px);
+            right: calc(50% - 224px - 300px);
         }
 
         @media (max-width: 768px) {
@@ -1065,17 +1065,31 @@
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
                 explanationHTML += `<p class="text-sm">? = 6.0×10²³ × ${data.givenValue}</p>`;
-                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer.toExponential(1)} 個</span></p>`;
+                
+                // ← ここを修正
+                const [mantissa, exponent] = data.answer.toExponential(1).split('e+');
+                const expDigits = exponent.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
+                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${mantissa}×10${expDigits} 個</span></p>`;
+                
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'particles_to_mol') {
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 6.0×10²³ 個 = 1 mol を確認</p>`;
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center text-xs">`;
-                explanationHTML += `<p>6.0×10²³ 個 : 1 mol = ${data.givenValue.toExponential(1)} 個 : ? mol</p>`;
+                
+                // ← ここも修正
+                const [mantissa2, exponent2] = data.givenValue.toExponential(1).split('e+');
+                const expDigits2 = exponent2.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
+                explanationHTML += `<p>6.0×10²³ 個 : 1 mol = ${mantissa2}×10${expDigits2} 個 : ? mol</p>`;
+                
                 explanationHTML += `</div>`;
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
-                explanationHTML += `<p class="text-sm">? = 1 × ${data.givenValue.toExponential(1)} ÷ 6.0×10²³</p>`;
+                
+                const [mantissa3, exponent3] = data.givenValue.toExponential(1).split('e+');
+                const expDigits3 = exponent3.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
+                explanationHTML += `<p class="text-sm">? = 1 × ${mantissa3}×10${expDigits3} ÷ 6.0×10²³</p>`;
+                
                 explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'g_to_L' || data.questionType === 'L_to_g') {
