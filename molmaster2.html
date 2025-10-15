@@ -143,7 +143,7 @@
             border-radius: 16px;
             padding: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            max-width: 280px;
+            max-width: 420px;
             max-height: 70vh;
             overflow-y: auto;
             opacity: 0;
@@ -156,10 +156,61 @@
             pointer-events: all;
         }
         #hint-panel {
-            left: calc(50% - 224px - 310px);  /* メインパネル幅の半分 + サイドパネル幅 */
+            left: 20px;
         }
         #explanation-panel {
-            right: calc(50% - 224px - 300px);
+            right: 20px;
+        }
+
+        /* 博士の講義モード用の背景アニメーション */
+        .floating-doctor {
+            position: fixed;
+            font-size: 48px;
+            pointer-events: none;
+            z-index: 1;
+            animation: float-random 20s ease-in-out infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes float-random {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+                transform: translate(30vw, 20vh) rotate(15deg);
+            }
+            50% {
+                transform: translate(-20vw, 40vh) rotate(-10deg);
+            }
+            75% {
+                transform: translate(40vw, -10vh) rotate(20deg);
+            }
+        }
+
+        .doctor-message {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 12px 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            color: #1e40af;
+            z-index: 60;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .doctor-message.show {
+            animation: message-popup 3s ease-in-out;
+        }
+        
+        @keyframes message-popup {
+            0%, 100% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            10%, 90% { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
         @media (max-width: 768px) {
@@ -178,6 +229,10 @@
 <body class="flex items-center justify-center min-h-screen">
     <div id="bg-animation"></div>
     <div id="incorrect-flash"></div>
+    
+    <!-- 博士の講義モード用の浮遊博士とメッセージ -->
+    <div id="floating-doctors-container"></div>
+    <div id="doctor-message" class="doctor-message"></div>
     
     <!-- ルール説明ポップアップ -->
     <div id="rules-popup" class="popup-overlay">
@@ -263,11 +318,11 @@
             
                 <!-- ゲームスタートボタンを2分割 -->
                 <div class="flex space-x-2 mb-4">
-                    <button id="start-game-button" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform">
-                        🎮 ゲーム<br>スタート
+                    <button id="start-game-button" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-2 rounded-lg text-base shadow-lg transform hover:scale-105 transition-transform">
+                        🎮 ゲームスタート
                     </button>
-                    <button id="start-lecture-button" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform">
-                        👨‍🔬 博士の<br>講義
+                    <button id="start-lecture-button" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-2 rounded-lg text-base shadow-lg transform hover:scale-105 transition-transform">
+                        👨‍🔬 博士の講義
                     </button>
                 </div>
                 
@@ -398,6 +453,9 @@
         const explanationPanel = document.getElementById('explanation-panel');
         const explanationContent = document.getElementById('explanation-content');
 
+        const floatingDoctorsContainer = document.getElementById('floating-doctors-container');
+        const doctorMessageEl = document.getElementById('doctor-message');
+
         const finalScoreEl = document.getElementById('final-score');
         const resultMessageEl = document.getElementById('result-message');
         const doctorTextEl = document.getElementById('doctor-text');
@@ -469,6 +527,7 @@
         let isLectureMode = false; // 講義モードフラグ
         let currentQuestionData = {}; // 現在の問題データを保存
         let isExplanationShown = false; // 解説表示状態
+        let doctorMessageInterval; // 博士のメッセージ表示用タイマー
 
         // --- Firebase初期化と認証 ---
         async function initializeFirebase() {
@@ -510,12 +569,14 @@
         
         function resetToTitle() {
             clearInterval(timerInterval);
+            clearInterval(doctorMessageInterval);
             score = 0; combo = 0; timeLeft = GAME_TIME; warmthLevel = 0; questionCount = 0; correctCount = 0;
             isLectureMode = false;
             isExplanationShown = false;
             updateBackgroundColor(); updateScore(); updateTimer(); hideCombo(); endFeverMode();
             hideHintPanel();
             hideExplanationPanel();
+            stopFloatingDoctors();
             doctorTextEl.textContent = '👨‍🔬 ワシが博士じゃ。君の挑戦を待っておるぞ。';
             loadTitleScreenData();
             showScreen('start-screen');
@@ -579,10 +640,12 @@
                 timerContainer.classList.add('hidden');
                 hintButtonContainer.classList.remove('hidden');
                 doctorTextEl.textContent = '👨‍🔬 講義モードじゃ。じっくり学んでいくのじゃ！';
+                startFloatingDoctors();
             } else {
                 timerContainer.classList.remove('hidden');
                 hintButtonContainer.classList.add('hidden');
                 doctorTextEl.textContent = '👨‍🔬 さあ、最初のミッションじゃ！';
+                stopFloatingDoctors();
             }
             
             showScreen('question-screen');
@@ -601,6 +664,7 @@
             submitAnswerButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
             submitAnswerButton.classList.add('bg-green-500', 'hover:bg-green-600');
             hideExplanationPanel();
+            hideHintPanel();
             
             let substancePool, molPool, substance;
             let answer = 0, unit = '';
@@ -963,8 +1027,141 @@
             if (timeLeft <= 0) endGame();
         }
 
-        // --- ヒント・解説機能 ---
-        function showHint() {
+        function showExplanation() {
+            const data = currentQuestionData;
+            let explanationHTML = '<div class="space-y-3">';
+            
+            explanationHTML += `<div class="bg-green-50 p-3 rounded-lg border-2 border-green-300">`;
+            explanationHTML += `<p class="font-bold text-green-800 mb-2">✅ 正解</p>`;
+            
+            // 正解表示部分で指数表記を修正
+            let answerDisplay = data.answer;
+            if (data.answer > 1e5) {
+                const [mantissa, exponent] = data.answer.toExponential(1).split('e+');
+                const expDigits = exponent.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
+                answerDisplay = `${mantissa}×10${expDigits}`;
+            }
+            explanationHTML += `<p class="text-2xl font-bold text-green-700">${answerDisplay} ${data.answerUnit}</p>`;
+            
+            explanationHTML += `</div>`;
+            
+            explanationHTML += `<div class="bg-blue-50 p-3 rounded-lg">`;
+            explanationHTML += `<p class="font-bold text-blue-800 mb-3">📝 解き方</p>`;
+            
+            // 問題タイプ別の解説
+            if (data.questionType === 'mol_to_g') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 1 mol = ${data.substance.molarMass.toFixed(1)} g を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center">`;
+                explanationHTML += `<p class="text-sm">1 mol : ${data.substance.molarMass.toFixed(1)} g = ${data.givenValue} mol : x g</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">x = ${data.substance.molarMass.toFixed(1)} × ${data.givenValue}</p>`;
+                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} g</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'g_to_mol') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 1 mol = ${data.substance.molarMass.toFixed(1)} g を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center">`;
+                explanationHTML += `<p class="text-sm">${data.substance.molarMass.toFixed(1)} g : 1 mol = ${data.givenValue.toPrecision(3)} g : x mol</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">x = 1 × ${data.givenValue.toPrecision(3)} ÷ ${data.substance.molarMass.toFixed(1)}</p>`;
+                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'mol_to_L') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 気体 1 mol = 22.4 L を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center">`;
+                explanationHTML += `<p class="text-sm">1 mol : 22.4 L = ${data.givenValue} mol : x L</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">x = 22.4 × ${data.givenValue}</p>`;
+                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} L</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'L_to_mol') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 気体 22.4 L = 1 mol を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center">`;
+                explanationHTML += `<p class="text-sm">22.4 L : 1 mol = ${data.givenValue.toPrecision(3)} L : x mol</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">x = 1 × ${data.givenValue.toPrecision(3)} ÷ 22.4</p>`;
+                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'mol_to_particles') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 1 mol = 6.0×10²³ 個 を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center text-xs">`;
+                explanationHTML += `<p>1 mol : 6.0×10²³ 個 = ${data.givenValue} mol : x 個</p>`;
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                explanationHTML += `<p class="text-sm">x = 6.0×10²³ × ${data.givenValue}</p>`;
+                
+                const [mantissa, exponent] = data.answer.toExponential(1).split('e+');
+                const expDigits = exponent.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
+                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${mantissa}×10${expDigits} 個</span></p>`;
+                
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'particles_to_mol') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 6.0×10²³ 個 = 1 mol を確認</p>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center text-xs">`;
+                
+                const [mantissa2, exponent2] = data.givenValue.toExponential(1).split('e+');
+                const expDigits2 = exponent2.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
+                explanationHTML += `<p>6.0×10²³ 個 : 1 mol = ${mantissa2}×10${expDigits2} 個 : x mol</p>`;
+                
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                
+                const [mantissa3, exponent3] = data.givenValue.toExponential(1).split('e+');
+                const expDigits3 = exponent3.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
+                explanationHTML += `<p class="text-sm">x = 1 × ${mantissa3}×10${expDigits3} ÷ 6.0×10²³</p>`;
+                
+                explanationHTML += `<p class="text-sm">　= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
+                explanationHTML += `</div>`;
+            } else if (data.questionType === 'g_to_L' || data.questionType === 'L_to_g') {
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> まず mol に変換する</p>`;
+                const intermediateMol = data.givenUnit === 'g' 
+                    ? (data.givenValue / data.substance.molarMass)
+                    : (data.givenValue / MOLAR_VOLUME);
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                if (data.givenUnit === 'g') {
+                    explanationHTML += `<p class="text-sm">${data.givenValue.toPrecision(3)} g ÷ ${data.substance.molarMass.toFixed(1)} g/mol = ${intermediateMol.toPrecision(3)} mol</p>`;
+                } else {
+                    explanationHTML += `<p class="text-sm">${data.givenValue.toPrecision(3)} L ÷ 22.4 L/mol = ${intermediateMol.toPrecision(3)} mol</p>`;
+                }
+                explanationHTML += `</div>`;
+                explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> mol から ${data.answerUnit} に変換</p>`;
+                explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
+                if (data.answerUnit === 'L') {
+                    explanationHTML += `<p class="text-sm">${intermediateMol.toPrecision(3)} mol × 22.4 L/mol = <span class="font-bold text-green-600">${data.answer} L</span></p>`;
+                } else {
+                    explanationHTML += `<p class="text-sm">${intermediateMol.toPrecision(3)} mol × ${data.substance.molarMass.toFixed(1)} g/mol = <span class="font-bold text-green-600">${data.answer} g</span></p>`;
+                }
+                explanationHTML += `</div>`;
+            }
+            
+            explanationHTML += `</div>`;
+            
+            explanationHTML += `<div class="bg-purple-50 p-3 rounded-lg">`;
+            explanationHTML += `<p class="font-bold text-purple-800 mb-2">🎯 ポイント</p>`;
+            explanationHTML += `<p class="text-sm">比の計算を使えば、中学生でも解ける！</p>`;
+            explanationHTML += `<p class="text-sm mt-1">「1 molが何g（または何L、何個）か」を覚えて、比の式を作ろう！</p>`;
+            explanationHTML += `</div>`;
+            
+            explanationHTML += '</div>';
+            
+            explanationContent.innerHTML = explanationHTML;
+            explanationPanel.classList.add('active');
+        }
             const data = currentQuestionData;
             let hintHTML = '<div class="space-y-3">';
             
@@ -1065,31 +1262,17 @@
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
                 explanationHTML += `<p class="text-sm">? = 6.0×10²³ × ${data.givenValue}</p>`;
-                
-                // ← ここを修正
-                const [mantissa, exponent] = data.answer.toExponential(1).split('e+');
-                const expDigits = exponent.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
-                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${mantissa}×10${expDigits} 個</span></p>`;
-                
+                explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer.toExponential(1)} 個</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'particles_to_mol') {
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ1:</span> 6.0×10²³ 個 = 1 mol を確認</p>`;
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ2:</span> 比の式を作る</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2 text-center text-xs">`;
-                
-                // ← ここも修正
-                const [mantissa2, exponent2] = data.givenValue.toExponential(1).split('e+');
-                const expDigits2 = exponent2.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
-                explanationHTML += `<p>6.0×10²³ 個 : 1 mol = ${mantissa2}×10${expDigits2} 個 : ? mol</p>`;
-                
+                explanationHTML += `<p>6.0×10²³ 個 : 1 mol = ${data.givenValue.toExponential(1)} 個 : ? mol</p>`;
                 explanationHTML += `</div>`;
                 explanationHTML += `<p class="text-sm mb-2"><span class="font-bold">ステップ3:</span> 計算する</p>`;
                 explanationHTML += `<div class="bg-white p-2 rounded my-2">`;
-                
-                const [mantissa3, exponent3] = data.givenValue.toExponential(1).split('e+');
-                const expDigits3 = exponent3.split('').map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[digit]).join('');
-                explanationHTML += `<p class="text-sm">? = 1 × ${mantissa3}×10${expDigits3} ÷ 6.0×10²³</p>`;
-                
+                explanationHTML += `<p class="text-sm">? = 1 × ${data.givenValue.toExponential(1)} ÷ 6.0×10²³</p>`;
                 explanationHTML += `<p class="text-sm">= <span class="font-bold text-green-600">${data.answer} mol</span></p>`;
                 explanationHTML += `</div>`;
             } else if (data.questionType === 'g_to_L' || data.questionType === 'L_to_g') {
@@ -1118,7 +1301,7 @@
             
             explanationHTML += `<div class="bg-purple-50 p-3 rounded-lg">`;
             explanationHTML += `<p class="font-bold text-purple-800 mb-2">🎯 ポイント</p>`;
-            explanationHTML += `<p class="text-sm">比の計算を使えば、カンタンじゃ！</p>`;
+            explanationHTML += `<p class="text-sm">比の計算を使えば、中学生でも解ける！</p>`;
             explanationHTML += `<p class="text-sm mt-1">「1 molが何g（または何L、何個）か」を覚えて、比の式を作ろう！</p>`;
             explanationHTML += `</div>`;
             
@@ -1134,6 +1317,57 @@
         
         function hideExplanationPanel() {
             explanationPanel.classList.remove('active');
+        }
+
+        // --- 浮遊博士機能 ---
+        function startFloatingDoctors() {
+            // 3-5個の浮遊博士を生成
+            const numDoctors = Math.floor(Math.random() * 3) + 3;
+            floatingDoctorsContainer.innerHTML = '';
+            
+            for (let i = 0; i < numDoctors; i++) {
+                const doctor = document.createElement('div');
+                doctor.className = 'floating-doctor';
+                doctor.textContent = '👨‍🔬';
+                doctor.style.left = `${Math.random() * 80 + 10}%`;
+                doctor.style.top = `${Math.random() * 80 + 10}%`;
+                doctor.style.animationDelay = `${Math.random() * 5}s`;
+                doctor.style.animationDuration = `${15 + Math.random() * 10}s`;
+                floatingDoctorsContainer.appendChild(doctor);
+            }
+            
+            // ランダムに励ましメッセージを表示
+            const messages = [
+                'がんばるのじゃ～',
+                'その調子じゃ！',
+                '落ち着いて考えるのじゃ',
+                'よく理解できておるぞ！',
+                'もう少しじゃ！',
+                '完璧じゃな！',
+                'じっくり学ぶのじゃ',
+                'ヒントを見てみるのじゃ',
+                '焦らず考えるのじゃ',
+                'いい感じじゃぞ！'
+            ];
+            
+            doctorMessageInterval = setInterval(() => {
+                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                showDoctorMessage(randomMessage);
+            }, 15000 + Math.random() * 10000); // 15-25秒ごと
+        }
+        
+        function stopFloatingDoctors() {
+            floatingDoctorsContainer.innerHTML = '';
+            clearInterval(doctorMessageInterval);
+            doctorMessageEl.classList.remove('show');
+        }
+        
+        function showDoctorMessage(message) {
+            doctorMessageEl.textContent = `👨‍🔬 ${message}`;
+            doctorMessageEl.classList.add('show');
+            setTimeout(() => {
+                doctorMessageEl.classList.remove('show');
+            }, 3000);
         }
 
         const BACKGROUND_COLORS = [
