@@ -410,16 +410,7 @@
         import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, setLogLevel, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         
-        // 注意: 実際のFirebase設定に置き換えてください
-        // 元のfirebase-config.jsファイルの内容をここにコピーしてください
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        import firebaseConfig from './firebase-config.js';
         
         // --- DOM要素の取得 ---
         const gameContainer = document.getElementById('game-container');
