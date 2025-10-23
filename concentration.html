@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>化学濃度計算ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .calc-circle, .small-circle {
+            border-radius: 50%;
+            display: grid;
+            position: relative;
+            background-color: #f0f4f8;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 2px solid #e2e8f0;
+            grid-template-rows: 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .calc-circle {
+            width: 320px;
+            height: 320px;
+        }
+        .small-circle {
+            width: 280px;
+            height: 280px;
+        }
+
+        .calc-circle::before, .calc-circle::after, .small-circle::before, .small-circle::after {
+            content: '';
+            position: absolute;
+            background-color: #cbd5e1;
+            z-index: 1;
+        }
+        .calc-circle::before, .small-circle::before { /* Horizontal line */
+            width: 100%; height: 2px; top: 50%; left: 0; transform: translateY(-50%);
+        }
+        .calc-circle::after, .small-circle::after { /* Vertical line */
+            width: 2px; height: 50%; top: 50%; left: 50%; transform: translateX(-50%);
+        }
+
+
+        .circle-section {
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.3s ease; text-align: center;
+            font-weight: 500; padding: 4px; position: relative; z-index: 2;
+        }
+        .small-circle .circle-section { padding: 2px; }
+
+        /* Main & Aux Circle Layout */
+        .circle-top { grid-column: 1 / 3; grid-row: 1 / 2; }
+        .circle-bottom-left { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .circle-bottom-right { grid-column: 2 / 3; grid-row: 2 / 3; }
+
+        .target-variable {
+            background-color: #60a5fa; color: white; transform: scale(1.05);
+        }
+        .small-circle .circle-top.target-variable { border-radius: 140px 140px 0 0; }
+        .small-circle .circle-bottom-left.target-variable { border-radius: 0 0 0 140px; }
+        .small-circle .circle-bottom-right.target-variable { border-radius: 0 0 140px 0; }
+        .calc-circle .circle-top.target-variable { border-radius: 150px 150px 0 0; }
+        .calc-circle .circle-bottom-left.target-variable { border-radius: 0 0 0 150px; }
+        .calc-circle .circle-bottom-right.target-variable { border-radius: 0 0 150px 0; }
+
+
+        .target-variable .circle-input:disabled {
+            background-color: transparent;
+            color: #ffffff;
+            font-weight: 700;
+            border-color: transparent;
+            cursor: default;
+            opacity: 1;
+        }
+        .target-variable .circle-unit, .target-variable .circle-label { color: white; }
+        
+        .tab-btn.active {
+            border-color: #3b82f6; background-color: #3b82f6; color: white;
+        }
+
+        .circle-label { font-size: 0.8rem; line-height: 1.25rem; }
+        .circle-input-wrapper { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.25rem; }
+        .circle-input {
+            width: 80px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;
+            text-align: center; font-size: 1rem; background-color: white; transition: all 0.3s ease;
+        }
+        .small-circle .circle-input { width: 70px; font-size: 0.9rem; }
+
+        .circle-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); }
+        .circle-input:disabled { background-color: #f1f5f9; cursor: not-allowed; }
+        .circle-input.fixed-value { color: #ef4444; font-weight: bold; }
+        .fixed-value-sec { background-color: #fee2e2; border-radius: 0 0 0 140px; }
+        .circle-unit { font-size: 0.875rem; }
+        .small-circle .circle-unit { font-size: 0.8rem; }
+
+
+        .formula-container { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.5rem; background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; font-size: 1.125rem; font-weight: 700; }
+        .fraction { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.2; }
+        .numerator { padding: 0 0.25rem 0.25rem; border-bottom: 2px solid currentColor; }
+        .denominator { padding: 0.25rem 0.25rem 0; }
+
+        .beaker {
+            width: 200px; height: 250px; border: 4px solid #9ca3af; border-top: none;
+            border-radius: 0 0 20px 20px; position: relative; background-color: #f8fafc; overflow: hidden;
+        }
+        .water, .solute-layer {
+            position: absolute; bottom: 0; left: 0; width: 100%; transition: height 0.3s ease, bottom 0.3s ease;
+        }
+        .water { background-color: #7dd3fc; }
+        .solute-layer { background-color: #f43f5e; }
+        .font-mono { font-family: 'Roboto Mono', monospace; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-600">化学濃度計算ツール</h1>
+            <p class="text-gray-600 mt-2">モル濃度と質量パーセント濃度をマスターしよう！</p>
+        </header>
+
+        <main class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+
+            <!-- Section 1: Percentage Concentration Intro -->
+            <section id="intro-percentage" class="mb-12 pb-8 border-b border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">1. 質量パーセント濃度の基本！</h2>
+                <div class="prose max-w-none text-gray-600 mb-6">
+                    <p>「濃度」とは、<strong>全体の中に、ある成分がどれくらいの割合で含まれているか</strong>を示すものです。</p>
+                    <p>例えば食塩水では、**溶液(食塩+水)全体**の質量に対して、**溶質(食塩)**の質量がどれくらいの割合かをパーセント(%)で表します。</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 mt-6 p-6 bg-gray-50 rounded-xl">
+                    <div class="flex-1">
+                        <div class="mb-4">
+                            <label for="percentage-water-slider" class="font-semibold">水の量 (溶媒): <span id="percentage-water-value" class="font-mono">100</span>g</label>
+                            <input id="percentage-water-slider" type="range" min="1" max="200" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label for="percentage-solute-slider" class="font-semibold">食塩の量 (溶質): <span id="percentage-solute-value" class="font-mono">25</span>g</label>
+                            <input id="percentage-solute-slider" type="range" min="0" max="100" value="25" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div class="mt-6 text-center p-4 bg-white rounded-lg shadow-inner">
+                            <p class="text-lg font-semibold mb-2">食塩水の濃度は...</p>
+                            <div id="percentage-formula-display" class="text-gray-800 font-mono"></div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="beaker">
+                            <div id="percentage-water" class="water"></div>
+                            <div id="percentage-solute-layer" class="solute-layer"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section 2: Molarity Intro -->
+            <section id="intro-molarity" class="mb-12 pb-8 border-b border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">2. モル濃度のイメージをつかもう！</h2>
+                <div class="prose max-w-none text-gray-600 mb-6">
+                    <p>「モル濃度」は、溶液の<strong>体積(L)</strong>あたりに、溶質が<strong>何mol</strong>溶けているかを表します。</p>
+                    <p>下のスライダーを動かして、溶質の「物質量」や溶液の「体積」を変えると、濃度がどう変わるか見てみましょう。</p>
+                </div>
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 mt-6 p-6 bg-gray-50 rounded-xl">
+                    <div class="flex-1">
+                        <div class="mb-4">
+                            <label for="mol-solute-slider" class="font-semibold">溶質の物質量: <span id="mol-solute-value" class="font-mono">1.0</span>mol</label>
+                            <input id="mol-solute-slider" type="range" min="0.1" max="2" step="0.1" value="1.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label for="mol-solution-slider" class="font-semibold">溶液の体積: <span id="mol-solution-value" class="font-mono">1.0</span>L</label>
+                            <input id="mol-solution-slider" type="range" min="0.1" max="2" step="0.1" value="1.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div class="mt-6 text-center p-4 bg-white rounded-lg shadow-inner">
+                            <p class="text-lg font-semibold mb-2">モル濃度は...</p>
+                            <div id="molarity-formula-display" class="text-gray-800 font-mono"></div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div id="molarity-beaker" class="beaker">
+                            <div id="molarity-water" class="water"></div>
+                            <div id="molarity-solute-layer" class="solute-layer"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Calculation Tool -->
+            <section id="calculator-tool" class="mb-12 pb-8 border-b border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">3. 基本的な濃度計算</h2>
+                <div class="flex justify-center mb-8 border-b border-gray-200">
+                    <button id="percentage-tab" class="tab-btn active text-lg font-semibold py-3 px-6 -mb-px border-b-2 border-transparent rounded-t-lg transition-colors duration-300">質量パーセント濃度 (%)</button>
+                    <button id="molarity-tab" class="tab-btn text-lg font-semibold py-3 px-6 -mb-px border-b-2 border-transparent rounded-t-lg transition-colors duration-300">モル濃度 (mol/L)</button>
+                </div>
+
+                <div class="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 md:gap-12">
+                    
+                    <div class="flex flex-row items-start gap-4">
+                        <div class="flex flex-col items-center flex-shrink-0">
+                            <p class="mb-4 font-semibold text-gray-700">① 計算したい項目をクリック &amp; 入力</p>
+                            <div id="calc-circle" class="calc-circle">
+                                <div id="solute" class="circle-section circle-top">
+                                    <div class="text-center">
+                                        <span id="solute-label" class="circle-label"></span>
+                                        <div class="circle-input-wrapper">
+                                            <input type="number" id="solute-value" class="circle-input font-mono">
+                                            <span id="solute-unit" class="circle-unit"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="solution" class="circle-section circle-bottom-left">
+                                     <div class="text-center">
+                                        <span id="solution-label" class="circle-label"></span>
+                                        <div class="circle-input-wrapper">
+                                            <input type="number" id="solution-value" class="circle-input font-mono">
+                                            <span id="solution-unit" class="circle-unit"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="concentration" class="circle-section circle-bottom-right">
+                                     <div class="text-center">
+                                        <span id="concentration-label" class="circle-label"></span>
+                                        <div class="circle-input-wrapper">
+                                            <input type="number" id="concentration-value" class="circle-input font-mono">
+                                            <span id="concentration-unit" class="circle-unit"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="result-area" class="w-full lg:w-2/5 p-6 bg-blue-50 border-l-4 border-blue-500 rounded-lg hidden lg:block mt-12">
+                         <h3 class="font-bold text-blue-800 text-xl mb-4">計算の解説</h3>
+                         <div id="calculation-process" class="mt-1 text-md text-gray-600 font-mono"></div>
+                    </div>
+                </div>
+
+                <div id="explanation" class="mt-12 pt-8 border-t border-gray-200">
+                    <h2 id="explanation-title" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+                    <div id="explanation-content" class="prose max-w-none text-gray-600"></div>
+                </div>
+            </section>
+            
+            <!-- Section 4: Dilution Problem -->
+            <section id="dilution-tool" class="mb-12 pb-8 border-b border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">4. 濃度希釈問題</h2>
+                <div class="prose max-w-none text-gray-600 mb-6 text-center">
+                    <p>濃い溶液に水を加えて薄めても、溶けている<strong class="text-red-600">溶質の物質量(mol)は変わりません</strong>。この性質を利用して計算します。</p>
+                </div>
+                <div class="flex flex-col items-center justify-center gap-4 mt-6 p-6 bg-gray-50 rounded-xl">
+                    <p class="font-semibold text-gray-700">① 計算したい項目をクリック &amp; 他の3項目を入力</p>
+                    <div class="flex items-center justify-center gap-4 flex-wrap">
+                        <!-- Concentrated Solution -->
+                        <div class="flex flex-col items-center">
+                             <p class="font-bold mb-2">濃い溶液 (希釈前)</p>
+                             <div class="small-circle">
+                                <div id="dil-mol-1-sec" class="circle-section circle-top"><span class="font-mono text-xl font-bold text-red-600">? mol</span></div>
+                                <div id="dil-v-1-sec" class="circle-section circle-bottom-left"><div class="circle-input-wrapper"><input type="number" id="dil-v-1" class="circle-input" placeholder="L"><span class="circle-unit">L</span></div></div>
+                                <div id="dil-c-1-sec" class="circle-section circle-bottom-right"><div class="circle-input-wrapper"><input type="number" id="dil-c-1" class="circle-input" placeholder="mol/L"><span class="circle-unit">mol/L</span></div></div>
+                             </div>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-500 self-center pt-8">=</div>
+                        <!-- Diluted Solution -->
+                        <div class="flex flex-col items-center">
+                             <p class="font-bold mb-2">薄い溶液 (希釈後)</p>
+                             <div class="small-circle">
+                                <div id="dil-mol-2-sec" class="circle-section circle-top"><span class="font-mono text-xl font-bold text-red-600">? mol</span></div>
+                                <div id="dil-v-2-sec" class="circle-section circle-bottom-left"><div class="circle-input-wrapper"><input type="number" id="dil-v-2" class="circle-input" placeholder="L"><span class="circle-unit">L</span></div></div>
+                                <div id="dil-c-2-sec" class="circle-section circle-bottom-right"><div class="circle-input-wrapper"><input type="number" id="dil-c-2" class="circle-input" placeholder="mol/L"><span class="circle-unit">mol/L</span></div></div>
+                             </div>
+                        </div>
+                    </div>
+                    <div id="dilution-result" class="mt-4 p-4 bg-white rounded-lg shadow-inner text-center w-full max-w-2xl hidden"></div>
+                </div>
+            </section>
+            
+            <!-- Section 5: Unit Conversion -->
+            <section id="conversion-tool">
+                 <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">5. 単位換算問題 (% ⇔ mol/L)</h2>
+                 <div class="prose max-w-none text-gray-600 mb-6 text-center">
+                    <p>質量パーセント濃度とモル濃度は、<strong>分子量</strong>と<strong>密度</strong>を使うことで相互に変換できます。</p>
+                    <p class="text-sm">※計算は「<strong class="text-red-600">溶液1L (=1000mL)</strong>」を基準に行われます。</p>
+                </div>
+                <div class="flex flex-col items-center justify-center gap-2 mt-6 p-6 bg-gray-50 rounded-xl">
+                    <p class="font-semibold text-gray-700">① 計算したい濃度をクリック &amp; 関連項目を入力</p>
+                     <div class="flex items-center justify-center gap-4 flex-wrap relative">
+                        <!-- Molarity -->
+                        <div class="flex flex-col items-center">
+                             <p class="font-bold mb-2">モル濃度</p>
+                             <div class="small-circle">
+                                <div id="conv-solute-mol-sec" class="circle-section circle-top"><div class="circle-input-wrapper"><input type="number" id="conv-solute-mol" class="circle-input font-mono" placeholder="mol" disabled><span class="circle-unit">mol</span></div></div>
+                                <div id="conv-solution-l-sec" class="circle-section circle-bottom-left fixed-value-sec"><div class="circle-input-wrapper"><input type="number" id="conv-solution-l" class="circle-input fixed-value font-mono" value="1" disabled><span class="circle-unit">L</span></div></div>
+                                <div id="conv-molarity-sec" class="circle-section circle-bottom-right"><div class="circle-input-wrapper"><input type="number" id="conv-molarity" class="circle-input font-mono" placeholder="mol/L"><span class="circle-unit">mol/L</span></div></div>
+                             </div>
+                        </div>
+
+                        <!-- Converters -->
+                        <div class="flex flex-col gap-12 self-center pt-8">
+                             <input type="number" id="conv-mw" class="w-24 text-center border rounded-md p-1 font-mono mx-auto block" placeholder="分子量 g/mol">
+                             <input type="number" id="conv-density" class="w-24 text-center border rounded-md p-1 font-mono mx-auto block" placeholder="密度 g/mL">
+                        </div>
+
+                        <!-- Percentage -->
+                        <div class="flex flex-col items-center">
+                             <p class="font-bold mb-2">質量パーセント濃度</p>
+                             <div class="small-circle">
+                                <div id="conv-solute-g-sec" class="circle-section circle-top"><div class="circle-input-wrapper"><input type="number" id="conv-solute-g" class="circle-input font-mono" placeholder="g" disabled><span class="circle-unit">g</span></div></div>
+                                <div id="conv-solution-g-sec" class="circle-section circle-bottom-left"><div class="circle-input-wrapper"><input type="number" id="conv-solution-g" class="circle-input font-mono" placeholder="g" disabled><span class="circle-unit">g</span></div></div>
+                                <div id="conv-percent-sec" class="circle-section circle-bottom-right"><div class="circle-input-wrapper"><input type="number" id="conv-percent" class="circle-input font-mono" placeholder="%"><span class="circle-unit">%</span></div></div>
+                             </div>
+                        </div>
+                    </div>
+                     <div id="conversion-result" class="mt-4 p-4 bg-white rounded-lg shadow-inner text-center w-full max-w-2xl hidden"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-8 text-sm text-gray-500">
+            <p>&copy; 2024 化学濃度計算ツール. All Rights Reserved.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Helper ---
+            function createFractionHTML(numerator, denominator) {
+                return `<div class="fraction"><span class="numerator">${numerator}</span><span class="denominator">${denominator}</span></div>`;
+            }
+
+            // --- Interactive Introduction Logic ---
+            const molSoluteSlider = document.getElementById('mol-solute-slider');
+            const molSolutionSlider = document.getElementById('mol-solution-slider');
+            const molSoluteValueSpan = document.getElementById('mol-solute-value');
+            const molSolutionValueSpan = document.getElementById('mol-solution-value');
+            const molarityFormulaDisplay = document.getElementById('molarity-formula-display');
+            const molarityWaterDiv = document.getElementById('molarity-water');
+            const molaritySoluteLayer = document.getElementById('molarity-solute-layer');
+
+            function updateMolarityBeaker() {
+                const soluteMol = parseFloat(molSoluteSlider.value);
+                const solutionL = parseFloat(molSolutionSlider.value);
+                molSoluteValueSpan.textContent = soluteMol.toFixed(1);
+                molSolutionValueSpan.textContent = solutionL.toFixed(1);
+                let molarity = 0;
+                if (solutionL > 0) { molarity = soluteMol / solutionL; }
+                molarityFormulaDisplay.innerHTML = `
+                <div class="formula-container" style="font-size: 1rem; padding: 0.5rem; background-color: transparent;">
+                    ${createFractionHTML('溶質(mol)', '溶液(L)')}<span> = </span>
+                    ${createFractionHTML(soluteMol.toFixed(1) + 'mol', solutionL.toFixed(1) + 'L')}<span> = </span>
+                    <span class="text-2xl font-bold text-blue-600">${molarity.toFixed(1)}</span><span>mol/L</span>
+                </div>`;
+                const maxSolutionL = 2.0; const maxMolarity = 2.0 / 0.1; 
+                const solutionHeightPercentage = (solutionL / maxSolutionL) * 100;
+                let soluteRatioInSolution = molarity / maxMolarity;
+                if (soluteRatioInSolution > 1) soluteRatioInSolution = 1;
+                const soluteHeightPercentage = solutionHeightPercentage * soluteRatioInSolution;
+                const waterHeightPercentage = solutionHeightPercentage - soluteHeightPercentage;
+                molaritySoluteLayer.style.height = `${soluteHeightPercentage}%`;
+                molarityWaterDiv.style.height = `${waterHeightPercentage}%`;
+                molarityWaterDiv.style.bottom = `${soluteHeightPercentage}%`;
+            }
+
+            const waterSlider = document.getElementById('percentage-water-slider');
+            const soluteSlider = document.getElementById('percentage-solute-slider');
+            const waterValueSpan = document.getElementById('percentage-water-value');
+            const soluteValueSpan = document.getElementById('percentage-solute-value');
+            const percentageFormulaDisplay = document.getElementById('percentage-formula-display');
+            const waterDiv = document.getElementById('percentage-water');
+            const soluteLayer = document.getElementById('percentage-solute-layer');
+
+            function updatePercentageBeaker() {
+                const waterAmount = parseInt(waterSlider.value);
+                const soluteAmount = parseInt(soluteSlider.value);
+                waterValueSpan.textContent = waterAmount;
+                soluteValueSpan.textContent = soluteAmount;
+                const solutionAmount = waterAmount + soluteAmount;
+                let concentration = 0;
+                if (solutionAmount > 0) { concentration = (soluteAmount / solutionAmount) * 100; }
+                percentageFormulaDisplay.innerHTML = `
+                <div class="formula-container" style="font-size: 1rem; padding: 0.5rem; background-color: transparent;">
+                    <span>(</span>${createFractionHTML('溶質', '溶液')}<span>) × 100 = (</span>
+                    ${createFractionHTML(soluteAmount + 'g', solutionAmount + 'g')}<span>) × 100 = </span>
+                    <span class="text-2xl font-bold text-blue-600">${concentration.toFixed(1)}</span><span>%</span>
+                </div>`;
+                const maxAmount = 200 + 100;
+                const soluteHeightPercentage = (soluteAmount / maxAmount) * 100;
+                const waterHeightPercentage = (waterAmount / maxAmount) * 100;
+                soluteLayer.style.height = `${soluteHeightPercentage}%`;
+                waterDiv.style.height = `${waterHeightPercentage}%`;
+                waterDiv.style.bottom = `${soluteHeightPercentage}%`;
+            }
+            if(molSoluteSlider) molSoluteSlider.addEventListener('input', updateMolarityBeaker);
+            if(molSolutionSlider) molSolutionSlider.addEventListener('input', updateMolarityBeaker);
+            if(waterSlider) waterSlider.addEventListener('input', updatePercentageBeaker);
+            if(soluteSlider) soluteSlider.addEventListener('input', updatePercentageBeaker);
+
+            // --- Calculator Logic ---
+            const tabs = { molarity: document.getElementById('molarity-tab'), percentage: document.getElementById('percentage-tab') };
+            const circleSections = { solute: document.getElementById('solute'), concentration: document.getElementById('concentration'), solution: document.getElementById('solution') };
+            const inputs = { solute: document.getElementById('solute-value'), concentration: document.getElementById('concentration-value'), solution: document.getElementById('solution-value') };
+            const labels = { solute: document.getElementById('solute-label'), concentration: document.getElementById('concentration-label'), solution: document.getElementById('solution-label') };
+            const units = { solute: document.getElementById('solute-unit'), concentration: document.getElementById('concentration-unit'), solution: document.getElementById('solution-unit') };
+            const resultArea = document.getElementById('result-area');
+            const calculationProcess = document.getElementById('calculation-process');
+            const explanationTitle = document.getElementById('explanation-title');
+            const explanationContent = document.getElementById('explanation-content');
+            
+            let state = { mode: 'percentage', target: 'concentration' };
+
+            const config = {
+                molarity: {
+                    title: 'モル濃度 (mol/L)',
+                    solute: { name: '溶質の物質量', unit: 'mol' },
+                    concentration: { name: 'モル濃度', unit: 'mol/L' },
+                    solution: { name: '溶液の体積', unit: 'L' },
+                    explanation: `<p><strong>モル濃度</strong>は、溶液1Lあたりに溶けている溶質の物質量(mol)を表す濃度のことです。単位は <strong>mol/L</strong> です。</p><p>計算式は以下のようになります。</p><div class="formula-container"><span>モル濃度 (mol/L) = </span>${createFractionHTML('溶質の物質量 (mol)', '溶液の体積 (L)')}</div><h3 class="font-bold mt-6 mb-2">ポイント💡</h3><ul><li>溶液の「体積」を使うのが特徴です。質量(g)ではないので注意！</li><li>体積の単位は必ずリットル(L)に変換します。1000mL = 1L です。</li><li>物質量(mol)は <strong>質量(g) / モル質量(g/mol)</strong> で計算できます。</li></ul>`
+                },
+                percentage: {
+                    title: '質量パーセント濃度 (%)',
+                    solute: { name: '溶質の質量', unit: 'g' },
+                    concentration: { name: '質量パーセント濃度', unit: '%' },
+                    solution: { name: '溶液の質量', unit: 'g' },
+                    explanation: `<p><strong>質量パーセント濃度</strong>は、溶液の質量に対する溶質の質量の割合をパーセント(百分率)で表したものです。単位は <strong>%</strong> です。</p><p>計算式は以下のようになります。</p><div class="formula-container"><span>質量パーセント濃度 (%) = </span>${createFractionHTML('溶質の質量 (g)', '溶液の質量 (g)')}<span> × 100</span></div><h3 class="font-bold mt-6 mb-2">ポイント💡</h3><ul><li>溶液の「質量」を使うのが特徴です。食塩水などでよく使われます。</li><li>「溶液の質量」は「溶質の質量」と「溶媒(水など)の合計です。間違えないように注意しましょう。</li><li>最後に100を掛けるのを忘れないようにしましょう。</li></ul>`
+                }
+            };
+            
+            function updateUI() {
+                const currentConfig = config[state.mode];
+                Object.values(tabs).forEach(tab => { if(tab) tab.classList.remove('active') });
+                if(tabs[state.mode]) tabs[state.mode].classList.add('active');
+                Object.keys(labels).forEach(key => {
+                    if(labels[key]) labels[key].textContent = currentConfig[key].name;
+                    if(units[key]) units[key].textContent = currentConfig[key].unit;
+                    if(inputs[key]) inputs[key].placeholder = currentConfig[key].unit;
+                });
+                if(explanationTitle) explanationTitle.textContent = `${currentConfig.title}の解説`;
+                if(explanationContent) explanationContent.innerHTML = currentConfig.explanation;
+                Object.values(inputs).forEach(input => { if(input) input.value = '' });
+                if(resultArea) resultArea.classList.add('hidden');
+                updateTargetUI();
+            }
+
+            function updateTargetUI() {
+                Object.keys(circleSections).forEach(key => {
+                    const section = circleSections[key];
+                    if(section){
+                         if (key === state.target) {
+                            section.classList.add('target-variable');
+                            inputs[key].disabled = true;
+                        } else {
+                            section.classList.remove('target-variable');
+                            inputs[key].disabled = false;
+                        }
+                    }
+                });
+            }
+
+            function calculate() {
+                const currentConfig = config[state.mode];
+                const soluteVal = parseFloat(inputs.solute.value);
+                const concVal = parseFloat(inputs.concentration.value);
+                const solutionVal = parseFloat(inputs.solution.value);
+                let result = null; let processHTML = '';
+
+                try {
+                    if (state.target === 'concentration') {
+                        if (isNaN(soluteVal) || isNaN(solutionVal)) { resultArea.classList.add('hidden'); return; }
+                        if (solutionVal === 0) throw new Error("溶液の量は0にできません。");
+                        if (state.mode === 'molarity') {
+                            result = soluteVal / solutionVal;
+                            processHTML = `${createFractionHTML(soluteVal, solutionVal)} = ${result.toPrecision(4)} mol/L`;
+                        } else {
+                            result = (soluteVal / solutionVal) * 100;
+                            processHTML = `${createFractionHTML(soluteVal, solutionVal)} × 100 = ${result.toPrecision(4)} %`;
+                        }
+                    } else if (state.target === 'solute') {
+                        if (isNaN(concVal) || isNaN(solutionVal)) { resultArea.classList.add('hidden'); return; }
+                        if (state.mode === 'molarity') {
+                            result = concVal * solutionVal;
+                            processHTML = `${concVal} × ${solutionVal} = ${result.toPrecision(4)} mol`;
+                        } else {
+                            result = (concVal / 100) * solutionVal;
+                            processHTML = `${createFractionHTML(concVal, 100)} × ${solutionVal} = ${result.toPrecision(4)} g`;
+                        }
+                    } else if (state.target === 'solution') {
+                        if (isNaN(soluteVal) || isNaN(concVal)) { resultArea.classList.add('hidden'); return; }
+                        if (concVal === 0) throw new Error("濃度は0にできません。");
+                        if (state.mode === 'molarity') {
+                            result = soluteVal / concVal;
+                            processHTML = `${createFractionHTML(soluteVal, concVal)} = ${result.toPrecision(4)} L`;
+                        } else {
+                            result = (soluteVal / concVal) * 100;
+                            processHTML = `${createFractionHTML(soluteVal, concVal)} × 100 = ${result.toPrecision(4)} g`;
+                        }
+                    }
+                    if (result !== null) {
+                        inputs[state.target].value = parseFloat(result.toPrecision(4));
+                        calculationProcess.innerHTML = `<div class="formula-container" style="padding: 0.5rem;">${processHTML}</div>`;
+                        resultArea.classList.remove('hidden');
+                    } else {
+                        resultArea.classList.add('hidden');
+                    }
+                } catch (e) {
+                    calculationProcess.innerHTML = `<p class="text-red-500">${e.message}</p>`;
+                    resultArea.classList.remove('hidden');
+                }
+            }
+            
+            if(tabs.molarity) tabs.molarity.addEventListener('click', () => { state.mode = 'molarity'; updateUI(); });
+            if(tabs.percentage) tabs.percentage.addEventListener('click', () => { state.mode = 'percentage'; updateUI(); });
+
+            Object.keys(circleSections).forEach(key => {
+                const section = circleSections[key];
+                if(section) section.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                       state.target = key;
+                       updateTargetUI();
+                       calculate();
+                    }
+                });
+            });
+            Object.values(inputs).forEach(input => {
+                if(input) input.addEventListener('input', calculate)
+            });
+            
+            // --- Dilution Tool Logic ---
+            const dilSections = {
+                c1: document.getElementById('dil-c-1-sec'), v1: document.getElementById('dil-v-1-sec'),
+                c2: document.getElementById('dil-c-2-sec'), v2: document.getElementById('dil-v-2-sec'),
+            };
+            const dilInputs = {
+                c1: document.getElementById('dil-c-1'), v1: document.getElementById('dil-v-1'),
+                c2: document.getElementById('dil-c-2'), v2: document.getElementById('dil-v-2'),
+            };
+            const dilMols = { 
+                mol1: document.getElementById('dil-mol-1-sec'), 
+                mol2: document.getElementById('dil-mol-2-sec')
+            };
+            const dilutionResult = document.getElementById('dilution-result');
+            let dilTarget = 'c2';
+
+            function updateDilTargetUI() {
+                for (const key in dilSections) {
+                    const section = dilSections[key];
+                    if(section){
+                        if (key === dilTarget) {
+                            section.classList.add('target-variable');
+                            dilInputs[key].disabled = true;
+                            dilInputs[key].value = '';
+                        } else {
+                            section.classList.remove('target-variable');
+                            dilInputs[key].disabled = false;
+                        }
+                    }
+                }
+            }
+
+            function calculateDilution() {
+                const values = {
+                    c1: parseFloat(dilInputs.c1.value), v1: parseFloat(dilInputs.v1.value),
+                    c2: parseFloat(dilInputs.c2.value), v2: parseFloat(dilInputs.v2.value)
+                };
+                let mol = NaN;
+                if (!isNaN(values.c1) && !isNaN(values.v1)) mol = values.c1 * values.v1;
+                else if (!isNaN(values.c2) && !isNaN(values.v2)) mol = values.c2 * values.v2;
+                
+                const molText = isNaN(mol) ? '? mol' : `${parseFloat(mol.toPrecision(4))} mol`;
+                if(dilMols.mol1) dilMols.mol1.innerHTML = `<span class="font-mono text-xl font-bold text-red-600">${molText}</span>`;
+                if(dilMols.mol2) dilMols.mol2.innerHTML = `<span class="font-mono text-xl font-bold text-red-600">${molText}</span>`;
+
+                const knowns = Object.values(values).filter(v => !isNaN(v)).length;
+                if (knowns < 3 || dilTarget === null) {
+                    if(dilutionResult) dilutionResult.classList.add('hidden');
+                    return;
+                }
+
+                let result, processHTML = '';
+                try {
+                    const formula = 'C₁V₁ = C₂V₂ より、';
+                    if (dilTarget === 'c1') {
+                        result = mol / values.v1;
+                        processHTML = `${formula}C₁ = ${createFractionHTML('C₂V₂', 'V₁')} = ${createFractionHTML(`${values.c2}×${values.v2}`, values.v1)} = ${result.toPrecision(4)} mol/L`;
+                    } else if (dilTarget === 'v1') {
+                         result = mol / values.c1;
+                         processHTML = `${formula}V₁ = ${createFractionHTML('C₂V₂', 'C₁')} = ${createFractionHTML(`${values.c2}×${values.v2}`, values.c1)} = ${result.toPrecision(4)} L`;
+                    } else if (dilTarget === 'c2') {
+                        result = mol / values.v2;
+                        processHTML = `${formula}C₂ = ${createFractionHTML('C₁V₁', 'V₂')} = ${createFractionHTML(`${values.c1}×${values.v1}`, values.v2)} = ${result.toPrecision(4)} mol/L`;
+                    } else if (dilTarget === 'v2') {
+                        result = mol / values.c2;
+                        processHTML = `${formula}V₂ = ${createFractionHTML('C₁V₁', 'C₂')} = ${createFractionHTML(`${values.c1}×${values.v1}`, values.c2)} = ${result.toPrecision(4)} L`;
+                    }
+                    dilInputs[dilTarget].value = parseFloat(result.toPrecision(4));
+                    if(dilutionResult) {
+                        dilutionResult.innerHTML = `<div class="formula-container font-mono" style="font-size: 1rem; padding: 0.5rem;">${processHTML}</div>`;
+                        dilutionResult.classList.remove('hidden');
+                    }
+                } catch(e) {
+                     if(dilutionResult){
+                         dilutionResult.innerHTML = `<p class="text-red-500">${e.message}</p>`;
+                         dilutionResult.classList.remove('hidden');
+                     }
+                }
+            }
+            Object.values(dilInputs).forEach(input => {
+                if(input) input.addEventListener('input', calculateDilution);
+            });
+            Object.keys(dilSections).forEach(key => {
+                const section = dilSections[key];
+                if(section) section.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT' && !section.classList.contains('circle-top')) {
+                        dilTarget = key;
+                        updateDilTargetUI();
+                        calculateDilution();
+                    }
+                });
+            });
+
+            // --- Conversion Tool Logic ---
+            const convSections = {
+                molarity: document.getElementById('conv-molarity-sec'),
+                percent: document.getElementById('conv-percent-sec'),
+            };
+            const convInputs = {
+                percent: document.getElementById('conv-percent'),
+                soluteG: document.getElementById('conv-solute-g'),
+                solutionG: document.getElementById('conv-solution-g'),
+                molarity: document.getElementById('conv-molarity'),
+                soluteMol: document.getElementById('conv-solute-mol'),
+                solutionL: document.getElementById('conv-solution-l'),
+                mw: document.getElementById('conv-mw'),
+                density: document.getElementById('conv-density'),
+            };
+            let convTarget = 'molarity';
+
+            function updateConvTargetUI() {
+                const targets = ['molarity', 'percent'];
+                targets.forEach(key => {
+                    const section = convSections[key];
+                    if(section){
+                         if (key === convTarget) {
+                            section.classList.add('target-variable');
+                            convInputs[key].disabled = true;
+                            convInputs[key].value = '';
+                        } else {
+                            section.classList.remove('target-variable');
+                            convInputs[key].disabled = false;
+                        }
+                    }
+                });
+            }
+
+            function calculateConversion() {
+                const values = Object.fromEntries(Object.entries(convInputs).map(([key, input]) => [key, parseFloat(input.value)]));
+                
+                if (convTarget === 'molarity') {
+                    if (isNaN(values.percent) || isNaN(values.density) || isNaN(values.mw)) return;
+                    
+                    const solutionG = 1000 * values.density;
+                    const soluteG = solutionG * (values.percent / 100);
+                    const soluteMol = soluteG / values.mw;
+                    const molarity = soluteMol / 1.0;
+                    
+                    convInputs.solutionG.value = parseFloat(solutionG.toPrecision(4));
+                    convInputs.soluteG.value = parseFloat(soluteG.toPrecision(4));
+                    convInputs.soluteMol.value = parseFloat(soluteMol.toPrecision(4));
+                    convInputs.molarity.value = parseFloat(molarity.toPrecision(4));
+
+                } else if (convTarget === 'percent') {
+                     if (isNaN(values.molarity) || isNaN(values.density) || isNaN(values.mw)) return;
+                    
+                    const soluteMol = values.molarity * 1.0;
+                    const soluteG = soluteMol * values.mw;
+                    const solutionG = 1000 * values.density;
+                    const percent = (soluteG / solutionG) * 100;
+                    
+                    convInputs.soluteMol.value = parseFloat(soluteMol.toPrecision(4));
+                    convInputs.soluteG.value = parseFloat(soluteG.toPrecision(4));
+                    convInputs.solutionG.value = parseFloat(solutionG.toPrecision(4));
+                    convInputs.percent.value = parseFloat(percent.toPrecision(4));
+                }
+            }
+
+            [convInputs.percent, convInputs.molarity, convInputs.mw, convInputs.density].forEach(input => {
+                if(input) input.addEventListener('input', calculateConversion)
+            });
+            Object.keys(convSections).forEach(key => {
+                const section = convSections[key];
+                if(section) section.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                        convTarget = key;
+                        updateConvTargetUI();
+                        // Clear all inputs except mw and density when target is changed
+                        Object.keys(convInputs).forEach(k => {
+                            if (k !== 'mw' && k !== 'density' && k !== 'solutionL') {
+                                if(convInputs[k]) convInputs[k].value = '';
+                            }
+                        });
+                        calculateConversion();
+                    }
+                });
+            });
+
+
+            // Initial call
+            if(typeof updateMolarityBeaker === 'function') updateMolarityBeaker();
+            if(typeof updatePercentageBeaker === 'function') updatePercentageBeaker();
+            if(typeof updateUI === 'function') updateUI();
+            if(typeof updateDilTargetUI === 'function') updateDilTargetUI();
+            if(typeof updateConvTargetUI === 'function') updateConvTargetUI();
+        });
+    </script>
+</body>
+</html>
+
